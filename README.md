@@ -42,7 +42,9 @@ Token phase is a memory-intensive phase, here by memory-intensive, we mean:
 * It will write GB(s) of kv-cache to GPU, thus stressing the GPU memory capacity.
 
 According to this [article](https://www.databricks.com/blog/llm-inference-performance-engineering-best-practices), for each token generation, LLM would read model weights and current KVC from HBM once. Token phase latency is dominated by HBM memory access instead of computation, so if we ignore the computation latency, the latency for generating the i th token L_i is given by:
+
 $L_i \approx L_{MW} + L_{KVC_i}$
+
 Where:
 * $Li$ is the token phase latency for generating the i'th token.
 * $L_{MW}$ is the memory access latency for reading model weights from HBM.
@@ -55,9 +57,13 @@ $S_{KVC_i} = (N_p + i \times bsz)\times s_{KVC}$
 Therefore, the latency for generating the i'th token in token phase becomes:
 $L_i \approx \frac{S_{MW} + (N_p+i\times bsz)\times s_{KVC}}{BW}$
 The token phase latency for a prompt with `np=Np/bsz` prompt length and `nt` response length and batch size `bsz` can be given as:
+
 $L_t = \sum^{n_t}_{i=1} \frac{S_{MW} + (n_p+i) \times bsz\times s_{KVC}}{BW}$
+
 It can be then simplified to:
+
 $L_t = bsz\times \alpha n_t^2 + (bsz\times \beta + C) n_t$
+
 Where:
 * $\alpha = \frac{s_{KVC}}{2BW}$
 * $\beta = \frac{(n_p + \frac{1}{2}) s_{KVC}}{BW}$
@@ -75,8 +81,11 @@ As demonstrated, the error stays below 5%.
 ## Over All Latency
 Based on the above conlcusion, assume we perform LLM inference with the following parameter:
 prompt length=$n_p$, response length=$n_t$, batch size= $bsz$, the overall latency can be calculated as the sum of prompt phase and token phase:
+
 $L = L_p + L_t$
+
 $L = \frac{bsz\times n_p}{k} + bsz\times \alpha n_t^2 + (bsz\times beta+C)n_t$
+
 We examine it with $n_p=1024$, $n_t=1-512$, $bsz=1$
 ![](figs/opt-6.7b-total-latency-bsz-1.png)
 ![](figs/opt-6.7b-total-error-1.png)
