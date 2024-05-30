@@ -19,9 +19,7 @@ Our next step is to get the relationship between prompt phase latency and total 
 As you can see, up to token length 2048, the prompt phase latency still shows a linear relationship with prompt token number, this illustrates that although prompt phase is compute intensive, our GPU compute resources has not saturated when prompt token length reaches 2048.
 
 Therefore we derive our prompt phase latency formula as:
-$
-L_p=\frac{N_p}{k}=\frac{bsz\times n_p}{k}
-$
+$L_p=\frac{N_p}{k}=\frac{bsz\times n_p}{k}$
 
 Where:
  * $L_p$ is the prompt phase latency
