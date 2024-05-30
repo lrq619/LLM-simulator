@@ -1,0 +1,44 @@
+{
+    "facebook/opt-6.7b": {
+        "num_hidden_layers": 32,
+        "num_heads": 32,
+        "model_size_GB": 13.4,
+        "kvc_size_KB": 512.0
+    },
+    "facebook/opt-13b": {
+        "num_hidden_layers": 40,
+        "num_heads": 40,
+        "model_size_GB": 26.0,
+        "kvc_size_KB": 800.0
+    },
+    "facebook/opt-30b": {
+        "num_hidden_layers": 48,
+        "num_heads": 56,
+        "model_size_GB": 60.0,
+        "kvc_size_KB": 1344.0
+    },
+    "facebook/opt-125m": {
+        "num_hidden_layers": 12,
+        "num_heads": 12,
+        "model_size_GB": 250.0,
+        "kvc_size_KB": 36.0
+    },
+    "facebook/opt-350m": {
+        "num_hidden_layers": 24,
+        "num_heads": 16,
+        "model_size_GB": 700.0,
+        "kvc_size_KB": 96.0
+    },
+    "facebook/opt-1.3b": {
+        "num_hidden_layers": 24,
+        "num_heads": 32,
+        "model_size_GB": 2.6,
+        "kvc_size_KB": 192.0
+    },
+    "facebook/opt-2.7b": {
+        "num_hidden_layers": 32,
+        "num_heads": 32,
+        "model_size_GB": 5.4,
+        "kvc_size_KB": 320.0
+    }
+}

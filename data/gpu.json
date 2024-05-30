@@ -1,0 +1,7 @@
+{
+    "NVIDIA A100 80GB PCIe": {
+        "memory_cap": 80,
+        "memory_bw": 2000,
+        "memory_bw_util": 60
+    }
+}
