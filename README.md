@@ -42,9 +42,7 @@ Token phase is a memory-intensive phase, here by memory-intensive, we mean:
 * It will write GB(s) of kv-cache to GPU, thus stressing the GPU memory capacity.
 
 According to this [article](https://www.databricks.com/blog/llm-inference-performance-engineering-best-practices), for each token generation, LLM would read model weights and current KVC from HBM once. Token phase latency is dominated by HBM memory access instead of computation, so if we ignore the computation latency, the latency for generating the i th token L_i is given by:
-$
-L_i \approx L_{MW} + L_{KVC_i}
-$
+$L_i \approx L_{MW} + L_{KVC_i}$
 Where:
 * $Li$ is the token phase latency for generating the i'th token.
 * $L_{MW}$ is the memory access latency for reading model weights from HBM.
