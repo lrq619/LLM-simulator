@@ -86,7 +86,10 @@ $L = L_p + L_t$
 
 $L = \frac{bsz\times n_p}{k} + bsz\times \alpha n_t^2 + (bsz\times beta+C)n_t$
 
-We examine it with $n_p=1024$, $n_t=1-512$, $bsz=1$
+We examine it with 
+* $n_p=1024$ 
+* $n_t=1-512$ 
+* $bsz=1$
 ![](figs/opt-6.7b-total-latency-bsz-1.png)
 ![](figs/opt-6.7b-total-error-1.png)
 
