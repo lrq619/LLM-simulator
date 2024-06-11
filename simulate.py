@@ -112,6 +112,7 @@ if __name__ == '__main__':
     parser.add_argument('--model-name', type=str, help="Specify the model name", required=True)
     parser.add_argument('--prompt-length', type=int, help="Number of tokens in prompt", default=1024)
     parser.add_argument('--response-length', type=int, help="Number of tokens in response", default=128)
+    parser.add_argument('--detail', type=bool, help="Whether to demonstrate deatils", default=False)
 
     # Parse the arguments
     args = parser.parse_args()
@@ -120,11 +121,13 @@ if __name__ == '__main__':
     model_name: str = args.model_name
     prompt_length: int = args.prompt_length
     response_length: int = args.response_length
+    detail : bool = args.detail
 
     # Ensure CUDA is available
     if torch.cuda.is_available():
         cuda_device_name = torch.cuda.get_device_name(torch.cuda.current_device())
-        print(f"We're simulating under {cuda_device_name}")
+        if detail:
+            print(f"We're simulating under {cuda_device_name}")
     else:
         print(f"CUDA device not available! Cannot get ptps!")
         exit(1)
@@ -138,7 +141,9 @@ if __name__ == '__main__':
     prompt_phase_latency = latencys[0]
     token_phase_latency = sum(latencys[1:])
     total_latency = prompt_phase_latency + token_phase_latency
-    print(f"model: {model_name} running on {cuda_device_name}, with prompt and response: {prompt_length}-{response_length}\n\tPrompt phase latency: {prompt_phase_latency:.2f}s\n\tToken phase latency: {token_phase_latency:.2f}s\n\tTotal latency: {total_latency:.2f}s\n\t alpha={alpha}, beta={beta}, c={c}, c/beta={c/beta:.1f}")
+    if detail: 
+        print(f"model: {model_name} running on {cuda_device_name}, with prompt and response: {prompt_length}-{response_length}\n\tPrompt phase latency: {prompt_phase_latency:.2f}s\n\tToken phase latency: {token_phase_latency:.2f}s\n\tTotal latency: {total_latency:.2f}s\n\t alpha={alpha}, beta={beta}, c={c}, c/beta={c/beta:.1f}")
+    print(f"latencys: {latencys}")
 
     
     

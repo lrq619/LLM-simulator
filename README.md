@@ -1,6 +1,51 @@
 # LLM-simulator
 A simulator that simulates LLM inference latency
 
+# Installation
+
+```
+conda create -n sim python=3.10
+conda activate sim
+pip install -r requirements.txt
+```
+
+# Usage
+1. Check whether your gpu is in `data/gpu.json`, if not, run:
+```
+python profile_gpu.py
+```
+Since currently we didn't measure GPU's memory bandwidth, please provide it in `data/gpu.json` in unit of `GB/s`
+
+2. Check whether the model you want to profile is in `data/model.json`, if not, run:
+```
+python profile_model.py --model-name <model-name>
+```
+Check `data/model.json`, it should have an entry of the corresponding model.
+
+3. Check whether the `(model, gpu)` pair is in `data/ptps.json`, if not, we need to profile the model's prompt phase behaviour on the specific gpu.
+Run:
+```
+python profile_prompt.py --model-name <model-name> 
+```
+Check `data/ptps.json`, it should have a `(model, gpu)` pair entry.
+
+4. After all these profiling, run simulator using(Profiling only needs to be performed once for each `(model, gpu)` pair):
+```
+python simulate.py --model-name <model-name> --prompt-length <p-length> --response-length <r-length>
+```
+It would print out a dict of float
+```
+latencys: [...]
+```
+The results is given in the following format:
+```
+latencys[0]: prompt phase latency
+latency[n]: latency for generate the n'th token in token phase
+```
+Therefore, to the total token phase latency, we should sum up `latencys[1:]`
+
+You can also directly invoke the function `simulate()` in `simulate.py` to get the latencys in python runtime.
+
 ## Prompt Phase
 Prompt Phase refers to the phase of converting incoming prompt into kv-cache, which is also referred to as "pre-fill phase", this phase is computational intensive, and process all tokens in parallel.
 
