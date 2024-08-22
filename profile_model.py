@@ -23,9 +23,12 @@ def profile_model(model_name):
 
     # Extract the required attributes
     num_hidden_layers = config.num_hidden_layers if hasattr(config, 'num_hidden_layers') else None
-    num_heads = config.num_attention_heads if hasattr(config, 'num_attention_heads') else None
+    if hasattr(config, "num_key_values_heads"):
+        num_heads = config.num_key_values_heads
+    else:
+        num_heads = config.num_attention_heads 
     # Regular expression pattern to find the number
-    pattern = r"/([^\s/]+)-(\d+\.\d+|\d+)(b|m)"
+    pattern = r"/([^\s/]+)-(\d+\.\d+|\d+)(b|m|B)"
     match = re.search(pattern, model_name)
     num_params = float(match.group(2))
     model_size_GB = (num_params * 2)  # Assuming parameters are 32-bit floats, 2 bytes each

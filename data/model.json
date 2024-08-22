@@ -40,5 +40,11 @@
         "num_heads": 32,
         "model_size_GB": 5.4,
         "kvc_size_KB": 320.0
+    },
+    "meta-llama/Meta-Llama-3-8B": {
+        "num_hidden_layers": 32,
+        "num_heads": 32,
+        "model_size_GB": 16.0,
+        "kvc_size_KB": 512.0
     }
 }

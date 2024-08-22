@@ -3,5 +3,10 @@
         "memory_cap": 80,
         "memory_bw": 2000,
         "memory_bw_util": 60
+    },
+    "NVIDIA RTX A5000": {
+        "memory_cap": 24,
+        "memory_bw": 768,
+        "memory_bw_util": 60
     }
 }
