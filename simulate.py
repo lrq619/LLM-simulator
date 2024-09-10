@@ -104,12 +104,21 @@ def simulate(model_name: str, cuda_device_name: str, prompt_length: int, respons
 
     return latencys, alpha, beta, c
 
+SHORT_GPU_NAME_DEVICE_CUDA_NAME_MAP = {
+    "a100": "NVIDIA A100 80GB PCIe",
+    "A100": "NVIDIA A100 80GB PCIe",
+    "a5000": "NVIDIA RTX A5000",
+    "A5000": "NVIDIA RTX A5000",
+}
+
+
 if __name__ == '__main__':
     # Create the parser
     parser = argparse.ArgumentParser(description="Model that is going to be simulated")
 
     # Add the argument for model name
     parser.add_argument('--model-name', type=str, help="Specify the model name", required=True)
+    parser.add_argument('--gpu-name', type=str, help="Specify the gpu name", required=True)
     parser.add_argument('--prompt-length', type=int, help="Number of tokens in prompt", default=1024)
     parser.add_argument('--response-length', type=int, help="Number of tokens in response", default=128)
     parser.add_argument('--detail', type=bool, help="Whether to demonstrate deatils", default=False)
@@ -119,18 +128,23 @@ if __name__ == '__main__':
 
     # Extract the model name from the command line arguments
     model_name: str = args.model_name
+    gpu_name: str = args.gpu_name
     prompt_length: int = args.prompt_length
     response_length: int = args.response_length
     detail : bool = args.detail
 
-    # Ensure CUDA is available
-    if torch.cuda.is_available():
-        cuda_device_name = torch.cuda.get_device_name(torch.cuda.current_device())
-        if detail:
-            print(f"We're simulating under {cuda_device_name}")
-    else:
-        print(f"CUDA device not available! Cannot get ptps!")
-        exit(1)
+    cuda_device_name = SHORT_GPU_NAME_DEVICE_CUDA_NAME_MAP.get(gpu_name)
+    if cuda_device_name == None:
+        print(f"gpu name: {gpu_name} not supported!")
+        exit(-1)
+    # # Ensure CUDA is available
+    # if torch.cuda.is_available():
+    #     cuda_device_name = torch.cuda.get_device_name(torch.cuda.current_device())
+    #     if detail:
+    #         print(f"We're simulating under {cuda_device_name}")
+    # else:
+    #     print(f"CUDA device not available! Cannot get ptps!")
+    #     exit(1)
 
     latencys, alpha, beta, c = simulate(
         model_name=model_name, 
