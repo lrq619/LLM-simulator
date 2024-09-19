@@ -1,6 +1,7 @@
 {
     "facebook/opt-6.7b": {
-        "NVIDIA A100 80GB PCIe": 13036.076255963511
+        "NVIDIA A100 80GB PCIe": 13036.076255963511,
+        "NVIDIA RTX A5000": 5916.350915925302
     },
     "facebook/opt-125m": {
         "NVIDIA A100 80GB PCIe": 89933.56687251454
