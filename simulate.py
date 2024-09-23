@@ -3,6 +3,7 @@ from typing import List, Dict, Tuple
 import os
 import json
 import argparse
+from utils import SHORT_GPU_NAME_DEVICE_CUDA_NAME_MAP
 
 def get_gpu_info(cuda_device_name: str) -> Tuple[int, float, float]:
     # Read the JSON file for memory bandwidth information
@@ -104,12 +105,6 @@ def simulate(model_name: str, cuda_device_name: str, prompt_length: int, respons
 
     return latencys, alpha, beta, c
 
-SHORT_GPU_NAME_DEVICE_CUDA_NAME_MAP = {
-    "a100": "NVIDIA A100 80GB PCIe",
-    "A100": "NVIDIA A100 80GB PCIe",
-    "a5000": "NVIDIA RTX A5000",
-    "A5000": "NVIDIA RTX A5000",
-}
 
 
 if __name__ == '__main__':
