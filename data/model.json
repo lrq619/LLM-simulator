@@ -46,5 +46,23 @@
         "num_heads": 32,
         "model_size_GB": 16.0,
         "kvc_size_KB": 128.0
+    },
+    "Qwen/Qwen-7B": {
+        "num_hidden_layers": 32,
+        "num_heads": 32,
+        "model_size_GB": 14.0,
+        "kvc_size_KB": 512.0
+    },
+    "meta-llama/Llama-2-13b-hf": {
+        "num_hidden_layers": 40,
+        "num_heads": 40,
+        "model_size_GB": 26.0,
+        "kvc_size_KB": 800.0
+    },
+    "meta-llama/Meta-Llama-3-8B-Instruct": {
+        "num_hidden_layers": 32,
+        "num_heads": 32,
+        "model_size_GB": 16.0,
+        "kvc_size_KB": 512.0
     }
 }

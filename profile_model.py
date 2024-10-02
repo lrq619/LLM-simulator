@@ -23,6 +23,7 @@ def profile_model(model_name):
 
     # Extract the required attributes
     num_hidden_layers = config.num_hidden_layers if hasattr(config, 'num_hidden_layers') else None
+    print(config)
     if hasattr(config, "num_key_values_heads"):
         num_heads = config.num_key_values_heads
     else:
