@@ -4,6 +4,8 @@ SHORT_GPU_NAME_DEVICE_CUDA_NAME_MAP = {
     "A100": "NVIDIA A100 80GB PCIe",
     "a5000": "NVIDIA RTX A5000",
     "A5000": "NVIDIA RTX A5000",
+    "a6000": "NVIDIA RTX A6000",
+    "A6000": "NVIDIA RTX A6000",
 }
 
 def get_model_info(model_name: str):

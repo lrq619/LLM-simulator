@@ -8,5 +8,10 @@
         "memory_cap": 24,
         "memory_bw": 768,
         "memory_bw_util": 60
+    },
+    "NVIDIA RTX A6000": {
+        "memory_cap": 48,
+        "memory_bw": 768,
+        "memory_bw_util": 60
     }
 }

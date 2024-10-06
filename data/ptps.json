@@ -11,5 +11,8 @@
     },
     "facebook/opt-30b": {
         "NVIDIA A100 80GB PCIe": 3586.6321915518943
+    },
+    "meta-llama/Llama-2-13b-hf": {
+        "NVIDIA RTX A6000": 4164.15309163167
     }
 }
