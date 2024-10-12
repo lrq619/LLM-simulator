@@ -32,12 +32,18 @@ def main():
     cuda_device_name = SHORT_GPU_NAME_DEVICE_CUDA_NAME_MAP[args.gpu_name]
 
     e2e_latencys = []
+    ttfts = []
+    tbts = []
     for prompt_length, response_length in token_data:
         latencys, _, _, _ = simulate(
             args.model_name, cuda_device_name, prompt_length, response_length
         )
+        ttft = latencys[0]
+        tbt = sum(latencys[1:]) / response_length
         e2e_latency = sum(latencys)
         e2e_latencys.append(e2e_latency)
+        ttfts.append(ttft)
+        tbts.append(tbt)
 
     model_suffix = args.model_name.split('/')[-1]
     if args.output_file_name:
@@ -50,11 +56,15 @@ def main():
     with open(output_file_name, 'w+') as f:
         for i, (prompt_length, response_length) in enumerate(token_data):
             latency = e2e_latencys[i]
+            ttft = ttfts[i]
+            tbt = tbts[i]
             outputs.append(
                 {
                     "ContextTokens": prompt_length,
                     "GeneratedTokens": response_length,
                     "SlowdownBase": latency,
+                    "TTFT": ttft,
+                    "TBT": tbt, 
                 }
             )
         json.dump(outputs, f)
