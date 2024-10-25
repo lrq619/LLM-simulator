@@ -2,6 +2,8 @@ import json
 import pandas as pd
 from piecewise_func import PiecewiseLinear
 from simulate import simulate
+from utils import PROJECT_ROOT_PATH
+import os
 
 
 def get_latency(_model_name: str, _cuda_device_name: str, _prompt_length: int, _response_length: int):
@@ -18,7 +20,7 @@ def get_latency(_model_name: str, _cuda_device_name: str, _prompt_length: int, _
     return prompt_latency, response_latency, total_latency
 
 def get_kvc_size(_model_name: str):
-    with open(f'data/model.json','r') as file:
+    with open(os.path.join(PROJECT_ROOT_PATH,'data/model.json'),'r') as file:
         data = json.load(file)
         
     model_info = data[_model_name]
@@ -27,7 +29,7 @@ def get_kvc_size(_model_name: str):
     return kvc_in_gb
 
 def load_datasets(_dataset_content: str):
-    data = pd.read_csv(f'./datasets/AzureLLMInferenceTrace_{_dataset_content}.csv', skiprows = 1,
+    data = pd.read_csv(os.path.join(PROJECT_ROOT_PATH, f'datasets/AzureLLMInferenceTrace_{_dataset_content}.csv'), skiprows = 1,
                        header = None, names=['TIMESTAMP', 'ContextTokens', 'GeneratedTokens'])
     data['TIMESTAMP'] = pd.to_datetime(data['TIMESTAMP'])
     initial_time = data['TIMESTAMP'].iloc[0]

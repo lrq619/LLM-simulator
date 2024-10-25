@@ -3,12 +3,12 @@ from typing import List, Dict, Tuple
 import os
 import json
 import argparse
-from utils import SHORT_GPU_NAME_DEVICE_CUDA_NAME_MAP
+from utils import SHORT_GPU_NAME_DEVICE_CUDA_NAME_MAP, PROJECT_ROOT_PATH
 
 def get_gpu_info(cuda_device_name: str) -> Tuple[int, float, float]:
     # Read the JSON file for memory bandwidth information
     try:
-        json_file_name = "./data/gpu.json"
+        json_file_name = os.path.join(PROJECT_ROOT_PATH, "./data/gpu.json")
         if not os.path.exists(json_file_name):
             err_msg = f"File not found: {json_file_name}"
             raise Exception(err_msg)
@@ -32,7 +32,7 @@ def get_gpu_info(cuda_device_name: str) -> Tuple[int, float, float]:
 
 def get_model_info(model_name: str) -> Tuple[int, int, float, float]:
     try:
-        json_file_name = "./data/model.json"
+        json_file_name = os.path.join(PROJECT_ROOT_PATH,"./data/model.json")
         if not os.path.exists(json_file_name):
             err_msg = f"File not found: {json_file_name}"
             raise Exception(err_msg)
@@ -50,7 +50,7 @@ def get_model_info(model_name: str) -> Tuple[int, int, float, float]:
         raise Exception(f"Could not find model information for {model_name} in {json_file_name}, consider first running: \npython profile_model.py --model-name={model_name}\n and check {json_file_name}")
 
 def get_ptps(model_name: str, cuda_device_name: str) -> float:
-    json_file_name = "./data/ptps.json"
+    json_file_name = os.path.join(PROJECT_ROOT_PATH,"./data/ptps.json")
     try:
         if not os.path.exists(json_file_name):
             err_msg = f"File not found: {json_file_name}"
