@@ -13,5 +13,10 @@
         "memory_cap": 48,
         "memory_bw": 768,
         "memory_bw_util": 60
+    },
+    "NVIDIA A100-SXM4-40GB": {
+        "memory_cap": 40,
+        "memory_bw": 1500,
+        "memory_bw_util": 60
     }
 }

@@ -7,7 +7,8 @@
         "NVIDIA A100 80GB PCIe": 89933.56687251454
     },
     "meta-llama/Meta-Llama-3-8B": {
-        "NVIDIA RTX A5000": 5498.487945041495
+        "NVIDIA RTX A5000": 5498.487945041495,
+        "NVIDIA A100-SXM4-40GB": 16529.43528666707
     },
     "facebook/opt-30b": {
         "NVIDIA A100 80GB PCIe": 3586.6321915518943

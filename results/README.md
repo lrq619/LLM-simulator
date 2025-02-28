@@ -1,0 +1,1 @@
+This folder aims to store results figures
