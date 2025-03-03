@@ -86,7 +86,7 @@ def simulate(model_name: str, cuda_device_name: str, prompt_length: int, respons
         print(e)
         exit(1)
 
-    print(f"For gpu: {cuda_device_name}, practical_mem_bw: {practical_mem_bw:.1f} GB/s, for model: {model_name}, kvc_size: {kvc_size_KB} KB, ptps={ptps:.1f} tokens/s")
+    # print(f"For gpu: {cuda_device_name}, practical_mem_bw: {practical_mem_bw:.1f} GB/s, for model: {model_name}, kvc_size: {kvc_size_KB} KB, ptps={ptps:.1f} tokens/s")
 
     # Prompt Phase Latency
     prompt_token_num = prompt_length * bsz

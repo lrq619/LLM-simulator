@@ -1,7 +1,9 @@
 import json
 import argparse
-from cluster_simulator import simulate
+from cluster_simulator import simulate, PROJECT_DIR
 from cluster_simulator.trace import process_trace
+from cluster_simulator.time_series import convert_processed_trace_to_concurrency_series, convert_concurrency_to_gpu_number_series,extract_alloc_free_events, TimeSeriesFunction
+from cluster_simulator.hardware import ClusterManager, NodeInfo, GPUInfo
 
 
 def main():
@@ -14,7 +16,14 @@ def main():
         config = json.load(f)
 
     workloads = config["workloads"]
-    for workload_config in workloads:
+    # setup the cluster manager
+    node_number = config["node_number"]
+    gpu_number = config["gpu_number"]
+    cluster_manager = ClusterManager(node_number=node_number, gpu_number=gpu_number, workload_number=len(workloads))
+
+    # iterate over the workloads
+    gpu_operations = []
+    for workload_id, workload_config in enumerate(workloads):
         processed_trace_file_path = process_trace(
             trace_path=workload_config["trace_path"],
             sampling_rate=workload_config["sampling_rate"],
@@ -22,6 +31,22 @@ def main():
             output_length_scale=workload_config["output_length_scale"]
         )
         print(f"Process trace finished! Going to use {processed_trace_file_path} as the trace for model: {workload_config['model']}")
+        # Input the processed trace file, output the timeseries concurrency vs. time
+        concurrency_series = convert_processed_trace_to_concurrency_series(processed_trace_file_path, config["gpu_name"])
+        fig = concurrency_series.plot()
+        fig.savefig(f"{PROJECT_DIR}/results/concurrency.png")
+        gpu_number_series = convert_concurrency_to_gpu_number_series(concurrency_series, workload_config['target'])
+        fig = gpu_number_series.plot()
+        fig.savefig(f"{PROJECT_DIR}/results/gpu_number.png")
+        # An event list recording each free/alloc GPU
+        operations = extract_alloc_free_events(gpu_number_series, workload_id)
+        gpu_operations.extend(operations)
+
+    idle_gpu_number_series, max_tp_level_seires = cluster_manager.replay(gpu_operations)
+    idle_gpu_number_series.plot().savefig(f"{PROJECT_DIR}/results/idle_gpu_number.png")
+    max_tp_level_seires.plot().savefig(f"{PROJECT_DIR}/results/max_tp_level.png")
+
+        
 
 if __name__ == '__main__':
     main()
