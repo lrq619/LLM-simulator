@@ -67,6 +67,8 @@ class ClusterManager:
         return max_tp_level
 
     def replay(self, gpu_operations: List[EventTimestamp]) -> Tuple[TimeSeriesFunction, TimeSeriesFunction]:
+        # sort the operations based on timestamp
+        gpu_operations = sorted(gpu_operations, key=lambda event: event.ts)
         idle_gpu_number = 0
         idle_gpu_numbers = []
 
