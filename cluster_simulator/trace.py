@@ -9,7 +9,6 @@ def process_trace(trace_path: str, sampling_rate, input_length_scale, output_len
     processed_trace_file_path = os.path.join(PROJECT_DIR, "trace_processed", process_trace_file_name)
     if os.path.exists(processed_trace_file_path):
         print(f"{processed_trace_file_path} already exists, going to reuse it.")
-        pass
     else:
         # sample the file
         sampler_bin_path = os.path.join(PROJECT_DIR, "sampler/sampler") 
@@ -17,7 +16,10 @@ def process_trace(trace_path: str, sampling_rate, input_length_scale, output_len
 
         cmd = f"{sampler_bin_path} -dataset_path {dataset_path} -sampling_rate {sampling_rate} -result_path {processed_trace_file_path}"
         result = subprocess.run(cmd, shell=True, capture_output=True, text=True) 
-        print(result.stdout)
+        if result.returncode == 0:
+            print(result.stdout)
+        else:
+            print(result.stderr)
     
     return processed_trace_file_path
 
