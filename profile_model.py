@@ -1,6 +1,6 @@
 import argparse
 import os
-from transformers import AutoConfig
+from transformers import AutoConfig, AutoTokenizer
 import json
 import re
 
@@ -20,12 +20,15 @@ def profile_model(model_name):
 
     # Load the model configuration from Hugging Face
     config = AutoConfig.from_pretrained(model_name)
+    
 
     # Extract the required attributes
     num_hidden_layers = config.num_hidden_layers if hasattr(config, 'num_hidden_layers') else None
     print(config)
     if hasattr(config, "num_key_values_heads"):
         num_heads = config.num_key_values_heads
+    elif hasattr(config, "num_key_value_heads"):
+        num_heads = config.num_key_value_heads
     else:
         num_heads = config.num_attention_heads 
     # Regular expression pattern to find the number

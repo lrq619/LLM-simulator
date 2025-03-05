@@ -64,5 +64,11 @@
         "num_heads": 32,
         "model_size_GB": 16.0,
         "kvc_size_KB": 512.0
+    },
+    "Qwen/Qwen2.5-7B-Instruct-1M": {
+        "num_hidden_layers": 28,
+        "num_heads": 4,
+        "model_size_GB": 14.0,
+        "kvc_size_KB": 392.0
     }
 }

@@ -15,5 +15,8 @@
     },
     "meta-llama/Llama-2-13b-hf": {
         "NVIDIA RTX A6000": 4164.15309163167
+    },
+    "Qwen/Qwen2.5-7B-Instruct-1M": {
+        "NVIDIA A100-SXM4-40GB": 15674.9143587909
     }
 }
