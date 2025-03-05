@@ -82,5 +82,11 @@
         "num_heads": 32,
         "model_size_GB": -1,
         "kvc_size_KB": 384.0
+    },
+    "google/gemma-2-2b": {
+        "num_hidden_layers": 26,
+        "num_heads": 4,
+        "model_size_GB": 4.0,
+        "kvc_size_KB": 234.0
     }
 }

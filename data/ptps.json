@@ -21,5 +21,8 @@
     },
     "microsoft/Phi-3.5-mini-instruct": {
         "NVIDIA A100-SXM4-40GB": 28179.509302932383
+    },
+    "google/gemma-2-2b": {
+        "NVIDIA A100-SXM4-40GB": 46867.7558645824
     }
 }
