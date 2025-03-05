@@ -7,6 +7,7 @@ class GPUInfo:
 
 class NodeInfo:
     def __init__(self, node_id: int, gpu_number:int):
+        self.orig_gpu_number = gpu_number
         self.node_id = node_id
         self.gpu_set: Set[GPUInfo] = set()
         for i in range(gpu_number):
@@ -25,6 +26,9 @@ class NodeInfo:
 
     def get_idle_gpu_number(self) -> int:
         return len(self.gpu_set)
+
+    def is_continous(self) -> bool:
+        return len(self.gpu_set) == self.orig_gpu_number
 
 class ClusterManager:
     def __init__(self, node_number: int, gpu_number: int, workload_number: int):
@@ -60,11 +64,13 @@ class ClusterManager:
             idle_gpu_number += node_info.get_idle_gpu_number()
         return idle_gpu_number
 
-    def get_max_tp_level(self) -> int:
-        max_tp_level = 0
+    def get_cont_gpu_number(self) -> int:
+        cont_gpu_number = 0
         for node_id, node_info in self.node_dict.items():
-            max_tp_level = max(max_tp_level, node_info.get_idle_gpu_number())
-        return max_tp_level
+            if node_info.is_continous():
+                cont_gpu_number += node_info.orig_gpu_number
+        return cont_gpu_number
+            
 
     def replay(self, gpu_operations: List[EventTimestamp]) -> Tuple[TimeSeriesFunction, TimeSeriesFunction]:
         # sort the operations based on timestamp
@@ -72,8 +78,8 @@ class ClusterManager:
         idle_gpu_number = 0
         idle_gpu_numbers = []
 
-        max_tp_level = 0
-        max_tp_levels = []
+        cont_gpu_number = 0
+        cont_gpu_numbers = []
         timestamps = []
         # replay the gpu operations
         for gpu_operation in gpu_operations:
@@ -97,14 +103,14 @@ class ClusterManager:
                 self.free(gpu_info_list)
 
                 idle_gpu_number = self.get_idle_gpu_number()
-                max_tp_level = self.get_max_tp_level()
+                cont_gpu_number = self.get_cont_gpu_number()
                 idle_gpu_numbers.append(idle_gpu_number)
-                max_tp_levels.append(max_tp_level)
+                cont_gpu_numbers.append(cont_gpu_number)
                 timestamps.append(gpu_operation.ts)
 
 
         idle_gpu_number_series = TimeSeriesFunction(timestamps, idle_gpu_numbers)
-        max_tp_level_series = TimeSeriesFunction(timestamps, max_tp_levels)
-        return idle_gpu_number_series, max_tp_level_series
+        cont_gpu_number_series = TimeSeriesFunction(timestamps, cont_gpu_numbers)
+        return idle_gpu_number_series, cont_gpu_number_series
             
 

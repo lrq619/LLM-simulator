@@ -48,9 +48,9 @@ def main():
         operations = extract_alloc_free_events(gpu_number_series, workload_id)
         gpu_operations.extend(operations)
 
-    idle_gpu_number_series, max_tp_level_seires = cluster_manager.replay(gpu_operations)
+    idle_gpu_number_series, cont_gpu_numbers_series = cluster_manager.replay(gpu_operations)
     idle_gpu_number_series.plot().savefig(f"{PROJECT_DIR}/results/idle_gpu_number.png")
-    max_tp_level_seires.plot().savefig(f"{PROJECT_DIR}/results/max_tp_level.png")
+    cont_gpu_numbers_series.plot().savefig(f"{PROJECT_DIR}/results/cont_gpu_number.png")
 
         
 
