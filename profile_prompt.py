@@ -59,7 +59,7 @@ def verify_latency_prompt_num(model_name: str):
 def get_latency_vs_prompt_num(model_name: str, max_prompt_num: int) -> float:
     prompt_token_nums = range(16, max_prompt_num, 16)
     latencys = []
-    llm = vllm.LLM(model=model_name)
+    llm = vllm.LLM(model=model_name, max_model_len=46700)
     for prompt_token_num in prompt_token_nums:
         prompt_phase_latency = profile_prompt_phase(
             llm=llm, 

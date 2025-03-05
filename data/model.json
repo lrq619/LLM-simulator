@@ -70,5 +70,17 @@
         "num_heads": 4,
         "model_size_GB": 14.0,
         "kvc_size_KB": 392.0
+    },
+    "microsoft/Phi-4-mini-instruct": {
+        "num_hidden_layers": 32,
+        "num_heads": 8,
+        "model_size_GB": 8,
+        "kvc_size_KB": 384.0
+    },
+    "microsoft/Phi-3.5-mini-instruct": {
+        "num_hidden_layers": 32,
+        "num_heads": 32,
+        "model_size_GB": -1,
+        "kvc_size_KB": 384.0
     }
 }

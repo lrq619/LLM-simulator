@@ -34,8 +34,12 @@ def profile_model(model_name):
     # Regular expression pattern to find the number
     pattern = r"/([^\s/]+)-(\d+\.\d+|\d+)(b|m|B)"
     match = re.search(pattern, model_name)
-    num_params = float(match.group(2))
-    model_size_GB = (num_params * 2)  # Assuming parameters are 32-bit floats, 2 bytes each
+    try:
+        num_params = float(match.group(2))
+        model_size_GB = (num_params * 2)  # Assuming parameters are 32-bit floats, 2 bytes each
+    except:
+        num_params = -1
+        model_size_GB = -1
 
     # Calculate kvc_size_KB
     d_head = (config.hidden_size // num_heads) if num_heads else None

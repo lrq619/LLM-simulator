@@ -18,5 +18,8 @@
     },
     "Qwen/Qwen2.5-7B-Instruct-1M": {
         "NVIDIA A100-SXM4-40GB": 15674.9143587909
+    },
+    "microsoft/Phi-3.5-mini-instruct": {
+        "NVIDIA A100-SXM4-40GB": 28179.509302932383
     }
 }
