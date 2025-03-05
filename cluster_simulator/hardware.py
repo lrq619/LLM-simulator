@@ -89,8 +89,11 @@ class ClusterManager:
                     self.workload_gpu_set_dict[workload_id].add(gpu_info)
             else:
                 gpu_info_list = []
+                workload_gpu_set = self.workload_gpu_set_dict[workload_id]
                 for i in range(-delta_gpu_number):
-                    gpu_info_list.append(self.workload_gpu_set_dict[workload_id].pop())
+                    if len(workload_gpu_set) == 0:
+                        break
+                    gpu_info_list.append(workload_gpu_set.pop())
                 self.free(gpu_info_list)
 
                 idle_gpu_number = self.get_idle_gpu_number()

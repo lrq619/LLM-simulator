@@ -39,8 +39,6 @@ class TimeSeriesFunction:
 
         ax.set_xlabel("Time")
         ax.set_ylabel("Value")
-        ax.set_title("Time Series Function")
-        ax.legend()
         ax.grid(True)
 
         return fig  # Return the figure instance

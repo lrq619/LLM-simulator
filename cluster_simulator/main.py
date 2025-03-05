@@ -34,10 +34,16 @@ def main():
         # Input the processed trace file, output the timeseries concurrency vs. time
         concurrency_series = convert_processed_trace_to_concurrency_series(processed_trace_file_path, config["gpu_name"])
         fig = concurrency_series.plot()
-        fig.savefig(f"{PROJECT_DIR}/results/concurrency.png")
+        ax = fig.gca() 
+        ax.set_ylabel(f"Concurrency")
+        ax.set_xlabel(f"Timestamps")
+        fig.savefig(f"{PROJECT_DIR}/results/concurrency_{workload_id}.png")
         gpu_number_series = convert_concurrency_to_gpu_number_series(concurrency_series, workload_config['target'])
         fig = gpu_number_series.plot()
-        fig.savefig(f"{PROJECT_DIR}/results/gpu_number.png")
+        ax = fig.gca()
+        ax.set_ylabel(f"GPU Number")
+        ax.set_xlabel(f"Timestamps")
+        fig.savefig(f"{PROJECT_DIR}/results/gpu_number_{workload_id}.png")
         # An event list recording each free/alloc GPU
         operations = extract_alloc_free_events(gpu_number_series, workload_id)
         gpu_operations.extend(operations)
