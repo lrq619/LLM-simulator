@@ -95,25 +95,30 @@ def convert_processed_trace_to_concurrency_series(processed_trace_file_path, gpu
     concurrency_series = TimeSeriesFunction(timestamps=timestamps, values=concurrencys)
     return concurrency_series
         
-def convert_concurrency_to_gpu_number_series(concurrency_series:TimeSeriesFunction, target: int) -> TimeSeriesFunction:
+def convert_concurrency_to_chunk_number_series(concurrency_series:TimeSeriesFunction, target: int) -> TimeSeriesFunction:
     timestamps = concurrency_series.timestamps
     concurrencys = concurrency_series.values
-    gpu_number = (concurrencys // target) + 1
-    gpu_number_series = TimeSeriesFunction(timestamps=timestamps, values=gpu_number)
-    return gpu_number_series
+    chunk_number = (concurrencys // target) + 1
+    chunk_number_series = TimeSeriesFunction(timestamps=timestamps, values=chunk_number)
+    return chunk_number_series
 
-def extract_alloc_free_events(gpu_number_series:TimeSeriesFunction, workload_id: int) -> List[EventTimestamp]:
+def extract_alloc_free_events(chunk_number_series:TimeSeriesFunction, workload_id: int, chunk_size: int) -> List[EventTimestamp]:
     event_ts_list = []
     previous_gpu_number = 0
-    for i in range(len(gpu_number_series.timestamps)):
-        timestamp = gpu_number_series.timestamps[i]
-        gpu_number = gpu_number_series.values[i]
+    for i in range(len(chunk_number_series.timestamps)):
+        timestamp = chunk_number_series.timestamps[i]
+        chunk_number = chunk_number_series.values[i]
 
-        if gpu_number == previous_gpu_number:
+        if chunk_number == previous_gpu_number:
             continue
         else:
-            delta_gpu_number = gpu_number - previous_gpu_number
-            event_ts_list.append(EventTimestamp(ts=timestamp, event=f"{workload_id}:{delta_gpu_number}"))
-        previous_gpu_number = gpu_number
+            delta_chunk_number = chunk_number - previous_gpu_number
+            event = {
+                "workload_id": workload_id,
+                "delta_chunk_number": delta_chunk_number,
+                "chunk_size": chunk_size,
+            }
+            event_ts_list.append(EventTimestamp(ts=timestamp, event=event))
+        previous_gpu_number = chunk_number
     return event_ts_list
 

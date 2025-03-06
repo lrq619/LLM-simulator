@@ -14,11 +14,14 @@ class NodeInfo:
             gpu = GPUInfo(self.node_id, i)
             self.gpu_set.add(gpu)
     
-    def alloc(self) -> Optional[GPUInfo]:
-        if len(self.gpu_set) == 0:
-            return None
+    def alloc(self, chunk_size: int) -> List[GPUInfo]:
+        if self.get_idle_gpu_number() < chunk_size:
+            return []
         else:
-            return self.gpu_set.pop()
+            gpus = []
+            for _ in range(chunk_size):
+                gpus.append(self.gpu_set.pop())
+            return gpus
     
     def free(self, gpu_info: GPUInfo):
         assert gpu_info.node_id == self.node_id
@@ -27,8 +30,12 @@ class NodeInfo:
     def get_idle_gpu_number(self) -> int:
         return len(self.gpu_set)
 
-    def is_continous(self) -> bool:
-        return len(self.gpu_set) == self.orig_gpu_number
+    def get_cont_gpu_number(self, chunk_size: int) -> int:
+        idle_gpu_number = self.get_idle_gpu_number()
+        cont_gpu_number = (idle_gpu_number // chunk_size) * chunk_size
+        return cont_gpu_number
+
+        
 
 class ClusterManager:
     def __init__(self, node_number: int, gpu_number: int, workload_number: int):
@@ -36,27 +43,29 @@ class ClusterManager:
         for i in range(node_number):
             node = NodeInfo(i, gpu_number)
             self.node_dict[i] = node
-        self.workload_gpu_set_dict: Dict[int, Set[GPUInfo]]={}
+        self.workload_gpu_chunks_dict: Dict[int, List[List[GPUInfo]]]={}
         for i in range(workload_number):
-            self.workload_gpu_set_dict[i] = set()
+            self.workload_gpu_chunks_dict[i] = []
 
-    def alloc(self, gpu_number: int) -> List[GPUInfo]:
+    def alloc(self, chunk_number: int, chunk_size: int) -> List[List[GPUInfo]]:
         # Iterate over nodes and find the first available GPU
         gpu_info_list = []
-        for i in range(gpu_number):
+        for i in range(chunk_number):
             for node_id, node_info in self.node_dict.items():
-                gpu_info = node_info.alloc()
-                if gpu_info == None:
+                gpus = node_info.alloc(chunk_size)
+                if gpus == []:
                     continue
-                gpu_info_list.append(gpu_info)
+                assert len(gpus) == chunk_size
+                gpu_info_list.append(gpus)
                 break
         return gpu_info_list
 
 
-    def free(self, gpu_infos: List[GPUInfo]):
-        for gpu_info in gpu_infos:
-            node_info = self.node_dict[gpu_info.node_id]
-            node_info.free(gpu_info)
+    def free(self, gpu_chunks: List[List[GPUInfo]]):
+        for gpu_chunk in gpu_chunks:
+            for gpu_info in gpu_chunk:
+                node_info = self.node_dict[gpu_info.node_id]
+                node_info.free(gpu_info)
 
     def get_idle_gpu_number(self) -> int:
         idle_gpu_number = 0
@@ -64,15 +73,14 @@ class ClusterManager:
             idle_gpu_number += node_info.get_idle_gpu_number()
         return idle_gpu_number
 
-    def get_cont_gpu_number(self) -> int:
+    def get_cont_gpu_number(self, chunk_size: int) -> int:
         cont_gpu_number = 0
         for node_id, node_info in self.node_dict.items():
-            if node_info.is_continous():
-                cont_gpu_number += node_info.orig_gpu_number
+            cont_gpu_number += node_info.get_cont_gpu_number(chunk_size)
         return cont_gpu_number
             
 
-    def replay(self, gpu_operations: List[EventTimestamp]) -> Tuple[TimeSeriesFunction, TimeSeriesFunction]:
+    def replay(self, gpu_operations: List[EventTimestamp], max_chunk_size: int) -> Tuple[TimeSeriesFunction, TimeSeriesFunction]:
         # sort the operations based on timestamp
         gpu_operations = sorted(gpu_operations, key=lambda event: event.ts)
         idle_gpu_number = 0
@@ -84,29 +92,28 @@ class ClusterManager:
         # replay the gpu operations
         for gpu_operation in gpu_operations:
             event = gpu_operation.event
-            splits = event.split(':')
-            assert len(splits) == 2
-            workload_id = int(splits[0])
-            delta_gpu_number = int(splits[1])
-            assert delta_gpu_number != 0
-            if delta_gpu_number > 0:
-                gpu_info_list = self.alloc(delta_gpu_number)
-                for gpu_info in gpu_info_list:
-                    self.workload_gpu_set_dict[workload_id].add(gpu_info)
+            workload_id = event["workload_id"]
+            delta_chunk_number = event["delta_chunk_number"]
+            chunk_size = event["chunk_size"]
+            assert delta_chunk_number != 0
+            if delta_chunk_number > 0:
+                gpu_chunks = self.alloc(delta_chunk_number, chunk_size)
+                for gpu_chunk in gpu_chunks:
+                    self.workload_gpu_chunks_dict[workload_id].append(gpu_chunk)
             else:
-                gpu_info_list = []
-                workload_gpu_set = self.workload_gpu_set_dict[workload_id]
-                for i in range(-delta_gpu_number):
-                    if len(workload_gpu_set) == 0:
+                gpu_chunks = []
+                workload_gpu_chunk_set = self.workload_gpu_chunks_dict[workload_id]
+                for i in range(-delta_chunk_number):
+                    if len(workload_gpu_chunk_set) == 0:
                         break
-                    gpu_info_list.append(workload_gpu_set.pop())
-                self.free(gpu_info_list)
+                    gpu_chunks.append(workload_gpu_chunk_set.pop())
+                self.free(gpu_chunks)
 
-                idle_gpu_number = self.get_idle_gpu_number()
-                cont_gpu_number = self.get_cont_gpu_number()
-                idle_gpu_numbers.append(idle_gpu_number)
-                cont_gpu_numbers.append(cont_gpu_number)
-                timestamps.append(gpu_operation.ts)
+            idle_gpu_number = self.get_idle_gpu_number()
+            cont_gpu_number = self.get_cont_gpu_number(chunk_size=max_chunk_size)
+            idle_gpu_numbers.append(idle_gpu_number)
+            cont_gpu_numbers.append(cont_gpu_number)
+            timestamps.append(gpu_operation.ts)
 
 
         idle_gpu_number_series = TimeSeriesFunction(timestamps, idle_gpu_numbers)
