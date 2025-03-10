@@ -30,6 +30,14 @@ class TimeSeriesFunction:
     def evaluate(self, t):
         return float(self.interpolator(t))
 
+    def sample(self,num_points=100):
+        min_timestamp = min(self.timestamps)
+        max_timestamp = max(self.timestamps)
+        delta_time = (max_timestamp - min_timestamp) / num_points
+        sampled_timestamps = [min_timestamp + delta_time * (i+1) for i in range(num_points)]
+        sampled_values = [self.evaluate(t) for t in sampled_timestamps]
+        return sampled_timestamps, sampled_values
+
 
     def plot(self, num_points=100):
         """Plot the interpolated function and return a matplotlib.figure.Figure instance."""
