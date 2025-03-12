@@ -80,7 +80,7 @@ class ClusterManager:
         return cont_gpu_number
             
 
-    def replay(self, gpu_operations: List[EventTimestamp], max_chunk_size: int) -> Tuple[TimeSeriesFunction, TimeSeriesFunction]:
+    def replay(self, gpu_operations: List[EventTimestamp], max_chunk_size: int) -> Tuple[TimeSeriesFunction, TimeSeriesFunction, List[EventTimestamp]]:
         # sort the operations based on timestamp
         gpu_operations = sorted(gpu_operations, key=lambda event: event.ts)
         idle_gpu_number = 0
@@ -89,6 +89,7 @@ class ClusterManager:
         cont_gpu_number = 0
         cont_gpu_numbers = []
         timestamps = []
+        alloc_events : List[EventTimestamp] = []
         # replay the gpu operations
         for gpu_operation in gpu_operations:
             event = gpu_operation.event
@@ -100,6 +101,25 @@ class ClusterManager:
                 gpu_chunks = self.alloc(delta_chunk_number, chunk_size)
                 for gpu_chunk in gpu_chunks:
                     self.workload_gpu_chunks_dict[workload_id].append(gpu_chunk)
+                # identify whether this allocation succeeds or not
+                if len(gpu_chunks) < delta_chunk_number:
+                    event = {
+                        "workload_id": workload_id,
+                        "chunk_size": chunk_size,
+                        "delta_chunk_number": delta_chunk_number,
+                        "success": False,
+                        "idle_gpu_number": self.get_idle_gpu_number(),
+                    }
+                else:
+                    event = {
+                        "workload_id": workload_id,
+                        "chunk_size": chunk_size,
+                        "delta_chunk_number": delta_chunk_number,
+                        "success": True,
+                        "idle_gpu_number": self.get_idle_gpu_number(),
+                    }
+                alloc_events.append(EventTimestamp(ts=gpu_operation.ts, event=event))
+
             else:
                 gpu_chunks = []
                 workload_gpu_chunk_set = self.workload_gpu_chunks_dict[workload_id]
@@ -118,6 +138,6 @@ class ClusterManager:
 
         idle_gpu_number_series = TimeSeriesFunction(timestamps, idle_gpu_numbers)
         cont_gpu_number_series = TimeSeriesFunction(timestamps, cont_gpu_numbers)
-        return idle_gpu_number_series, cont_gpu_number_series
+        return idle_gpu_number_series, cont_gpu_number_series, alloc_events
             
 

@@ -4,9 +4,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 from cluster_simulator import simulate, PROJECT_DIR
 from cluster_simulator.trace import process_trace
-from cluster_simulator.time_series import convert_processed_trace_to_concurrency_series, convert_concurrency_to_chunk_number_series,extract_alloc_free_events, TimeSeriesFunction
+from cluster_simulator.time_series import convert_processed_trace_to_concurrency_series, convert_concurrency_to_chunk_number_series,extract_alloc_free_events, TimeSeriesFunction, EventTimestamp
 from cluster_simulator.hardware import ClusterManager, NodeInfo, GPUInfo
 MAX_CHUNK_SIZE = 4
+from typing import List
 
 
 def main():
@@ -52,7 +53,8 @@ def main():
         operations = extract_alloc_free_events(chunk_number_series, workload_id, chunk_size)
         gpu_operations.extend(operations)
 
-    idle_gpu_number_series, cont_gpu_number_series = cluster_manager.replay(gpu_operations, max_chunk_size=MAX_CHUNK_SIZE)
+    idle_gpu_number_series, cont_gpu_number_series, alloc_events = cluster_manager.replay(gpu_operations, max_chunk_size=MAX_CHUNK_SIZE)
+    process_alloc_events(alloc_events)
     plot_idle_and_cont_gpu_numbers(idle_gpu_number_series, cont_gpu_number_series).savefig(f"{PROJECT_DIR}/results/gpu_number.png")
     sampled_idle_gpu_timestamps, sampled_idle_gpu_number = idle_gpu_number_series.sample()
     sampled_cont_gpu_timestamps, sampled_cont_gpu_number = cont_gpu_number_series.sample()
@@ -60,6 +62,34 @@ def main():
 
     # idle_gpu_number_series.plot().savefig(f"{PROJECT_DIR}/results/idle_gpu_number.png")
     # cont_gpu_number_series.plot().savefig(f"{PROJECT_DIR}/results/cont_gpu_number.png")
+
+def process_alloc_events(alloc_events: List[EventTimestamp]):
+    data_dict = {}
+    for event_ts in alloc_events:
+        event = event_ts.event
+        workload_id = event["workload_id"]
+        if workload_id not in data_dict.keys():
+             data_dict[workload_id] = []
+        data_dict[workload_id].append({
+             "success": event["success"],
+             "try_alloc_gpu_number": event["chunk_size"] * event["delta_chunk_number"],
+             "idle_gpu_number": event["idle_gpu_number"]
+        })
+
+    print(f"----------------------------------------------------------------------------------------------------------------------------------------------------")
+    for workload_id, data_list in data_dict.items():
+        total_alloc_number = len(data_list)
+        failure_alloc_number = 0
+        fragmentation_alloc_number = 0
+        for data in data_list:
+            if data["success"] == False:
+                failure_alloc_number += 1
+                if data["try_alloc_gpu_number"] < data["idle_gpu_number"]:
+                    fragmentation_alloc_number += 1
+
+        print(f"For workload: {workload_id}, there are totally {total_alloc_number} allocs, where {failure_alloc_number} are failed. In these failed allocs, {fragmentation_alloc_number} are failed due to external fragmentation.")
+    print(f"----------------------------------------------------------------------------------------------------------------------------------------------------")
+    
 
 def plot_idle_and_cont_gpu_numbers(idle_gpu_number_series: TimeSeriesFunction, cont_gpu_number_series: TimeSeriesFunction) -> plt.Figure:
         fig, axs = plt.subplots(2,1,figsize=(8, 4), sharex=True)
