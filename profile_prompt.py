@@ -66,6 +66,7 @@ def verify_latency_prompt_num(model_name: str):
 def get_latency_vs_prompt_num(model_name: str, max_prompt_num: int) -> float:
     prompt_token_nums = range(16, max_prompt_num, 16)
     latencys = []
+    #for small model, we should set the tp level to 1 and big for 4
     llm = vllm.LLM(model=model_name, tensor_parallel_size=4, trust_remote_code=True, gpu_memory_utilization=0.99, enforce_eager=True, max_model_len=2048)
     for prompt_token_num in prompt_token_nums:
         prompt_phase_latency = profile_prompt_phase(

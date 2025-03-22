@@ -54,13 +54,12 @@ class TimeSeriesFunction:
     def __repr__(self):
         return repr(self.data)
         
-def convert_request_to_event_ts(request_json, gpu_name) -> Tuple[EventTimestamp, EventTimestamp]:
+def convert_request_to_event_ts(request_json, model_name, gpu_name) -> Tuple[EventTimestamp, EventTimestamp]:
     arrive_ts = request_json["timestamp"] # is ms
     request_data = request_json["data"]
     prompt = request_data["prompt"]
     response_length = request_data["max_response_length"]
     prompt_length = len(prompt.split(" "))
-    model_name = request_data["model_name"]
     latencys, _,_,_ = simulate(
         model_name=model_name,
         cuda_device_name=gpu_name,
@@ -77,13 +76,13 @@ def convert_request_to_event_ts(request_json, gpu_name) -> Tuple[EventTimestamp,
     return arrive_event_ts, finish_event_ts
 
 
-def convert_processed_trace_to_concurrency_series(processed_trace_file_path, gpu_name) -> TimeSeriesFunction:
+def convert_processed_trace_to_concurrency_series(processed_trace_file_path, model_name, gpu_name) -> TimeSeriesFunction:
     with open(processed_trace_file_path, 'r') as f:
         json_data = json.load(f)
 
     event_ts_list = []
     for request_json in tqdm(json_data, desc="Converted", unit="req"):
-        arrive_ts, finish_ts = convert_request_to_event_ts(request_json, gpu_name)
+        arrive_ts, finish_ts = convert_request_to_event_ts(request_json, model_name, gpu_name)
         event_ts_list.append(arrive_ts)
         event_ts_list.append(finish_ts)
     event_ts_list = sorted(event_ts_list,key=lambda event: event.ts)
@@ -106,7 +105,10 @@ def convert_processed_trace_to_concurrency_series(processed_trace_file_path, gpu
 def convert_concurrency_to_chunk_number_series(concurrency_series:TimeSeriesFunction, target: int) -> TimeSeriesFunction:
     timestamps = concurrency_series.timestamps
     concurrencys = concurrency_series.values
-    chunk_number = (concurrencys // target) + 1
+    # Notice the times of chunk number don't need 1 more chunk
+    chunk_number = np.where((concurrencys >= target) & (concurrencys % target == 0), 
+                        concurrencys // target, 
+                        concurrencys // target + 1)
     chunk_number_series = TimeSeriesFunction(timestamps=timestamps, values=chunk_number)
     return chunk_number_series
 

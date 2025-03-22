@@ -40,10 +40,10 @@ def get_model_info(model_name: str) -> Tuple[int, int, float, float]:
             data = json.load(file)
 
         num_hidden_layers = data[model_name]["num_hidden_layers"]
-        num_heads = data[model_name]["num_heads"]
+        num_kv_heads = data[model_name]["num_kv_heads"]
         model_size_GB = data[model_name]["model_size_GB"]
         kvc_size_KB = data[model_name]["kvc_size_KB"]
-        return num_hidden_layers, num_heads, model_size_GB, kvc_size_KB
+        return num_hidden_layers, num_kv_heads, model_size_GB, kvc_size_KB
     except Exception as e:
         print(e)
         raise Exception(f"Could not find model information for {model_name} in {json_file_name}, consider first running: \npython profile_model.py --model-name={model_name}\n and check {json_file_name}")
@@ -76,7 +76,7 @@ def simulate(model_name: str, cuda_device_name: str, prompt_length: int, respons
         practical_mem_bw = memory_bw * memory_bw_util / 100 # GB/s
 
         # Then get model information
-        num_hidden_layers, num_heads, model_size_GB, kvc_size_KB = get_model_info(model_name=model_name)
+        num_hidden_layers, num_kv_heads, model_size_GB, kvc_size_KB = get_model_info(model_name=model_name)
 
         # Finally get ptps
         ptps = get_ptps(model_name=model_name, cuda_device_name=cuda_device_name)
