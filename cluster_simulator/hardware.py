@@ -81,7 +81,7 @@ class ClusterManager:
         return cont_gpu_number
             
 
-    def replay(self, gpu_operations: List[EventTimestamp]) -> Tuple[TimeSeriesFunction, TimeSeriesFunction, List[EventTimestamp]]:
+    def replay(self, gpu_operations: List[EventTimestamp], max_chunk_size: int) -> Tuple[TimeSeriesFunction, TimeSeriesFunction, List[EventTimestamp]]:
         # sort the operations based on timestamp
         gpu_operations = sorted(gpu_operations, key=lambda event: event.ts)
         idle_gpu_number = 0
@@ -131,7 +131,7 @@ class ClusterManager:
                 self.free(gpu_chunks)
 
             idle_gpu_number = self.get_idle_gpu_number()
-            cont_gpu_number = self.get_cont_gpu_number(chunk_size=chunk_size)
+            cont_gpu_number = self.get_cont_gpu_number(chunk_size=max_chunk_size)
             idle_gpu_numbers.append(idle_gpu_number)
             cont_gpu_numbers.append(cont_gpu_number)
             timestamps.append(gpu_operation.ts)

@@ -7,7 +7,7 @@ from cluster_simulator import simulate, PROJECT_DIR
 from cluster_simulator.trace import process_trace
 from cluster_simulator.time_series import convert_processed_trace_to_concurrency_series, convert_concurrency_to_chunk_number_series,extract_alloc_free_events, TimeSeriesFunction, EventTimestamp
 from cluster_simulator.hardware import ClusterManager, NodeInfo, GPUInfo
-MAX_CHUNK_SIZE = 8
+MAX_CHUNK_SIZE = 4
 from typing import List
 os.makedirs(f"{PROJECT_DIR}/results", exist_ok=True)
 
@@ -54,7 +54,7 @@ def main():
         operations = extract_alloc_free_events(chunk_number_series, workload_id, chunk_size)
         gpu_operations.extend(operations)
 
-    idle_gpu_number_series, cont_gpu_number_series, alloc_events = cluster_manager.replay(gpu_operations)
+    idle_gpu_number_series, cont_gpu_number_series, alloc_events = cluster_manager.replay(gpu_operations, max_chunk_size=MAX_CHUNK_SIZE)
     process_alloc_events(alloc_events)
     
     # Get the failure alloc series, when the try_alloc_gpu_number is larger than the idle_gpu_number

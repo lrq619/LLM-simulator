@@ -53,7 +53,7 @@ Check `data/ptps.json`, it should have a `(model, gpu)` pair entry.
 
 4. After all these profiling, run simulator using(Profiling only needs to be performed once for each `(model, gpu)` pair):
 ```
-python simulate.py --model-name <model-name> --gpu-name <gpu-name> --prompt-length <p-length> --response-length <r-length>
+python simulate.py --model-name <model-name> --tp-level <tp-level> --gpu-name <gpu-name> --prompt-length <p-length> --response-length <r-length>
 ```
 It would print out a list of float
 ```

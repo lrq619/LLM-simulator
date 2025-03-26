@@ -63,7 +63,7 @@ def get_ptps(model_name: str, cuda_device_name: str) -> float:
         print(e)
         raise Exception(f"Could not find ptps for {model_name} and {cuda_device_name} in {json_file_name}, consider first running: \npython profile_prompt.py --model-name={model_name}\n and check {json_file_name}")
 
-def simulate(model_name: str, cuda_device_name: str, prompt_length: int, response_length: int, bsz: int=1) -> List[float]:
+def simulate(model_name: str, cuda_device_name: str, prompt_length: int, response_length: int, bsz: int=1, tp_level: int=1) -> List[float]:
     """Simulates LLM generation latency for given model, prompt length and response length
     Return Value:
         Returns a list of float, where the first element denotes the prompt latency, rest element denotes the genertion latency for each token in token phase
@@ -94,7 +94,7 @@ def simulate(model_name: str, cuda_device_name: str, prompt_length: int, respons
 
     kvc_size_GB = kvc_size_KB / (1024**2)
     for i in range(response_length):
-        token_phase_latency = (model_size_GB + bsz * (prompt_length + i) * kvc_size_GB) / (practical_mem_bw)
+        token_phase_latency = (model_size_GB + bsz * (prompt_length + i) * kvc_size_GB) / (practical_mem_bw * tp_level)
         latencys.append(token_phase_latency)
 
     # alpha, beta, c in README
@@ -112,6 +112,7 @@ if __name__ == '__main__':
 
     # Add the argument for model name
     parser.add_argument('--model-name', type=str, help="Specify the model name", required=True)
+    parser.add_argument('--tp-level', type=int, help="Specify the tensor parallel level", default=1)
     parser.add_argument('--gpu-name', type=str, help="Specify the gpu name", required=True)
     parser.add_argument('--prompt-length', type=int, help="Number of tokens in prompt", default=1024)
     parser.add_argument('--response-length', type=int, help="Number of tokens in response", default=128)
