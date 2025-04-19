@@ -46,8 +46,8 @@ def run_vllm(llm: vllm.LLM, cuda_device_name: str, prompt_length: int, response_
     return mean_prompt_phase_latency, mean_token_phase_latency
 
 
-model_name = "meta-llama/Meta-Llama-3-8B"
-llm = vllm.LLM(model=model_name)
+model_name = "meta-llama/Meta-Llama-3.1-70B"
+llm = vllm.LLM(model=model_name, tensor_parallel_size=4, enforce_eager=True)
 
 if torch.cuda.is_available():
     cuda_device_name = torch.cuda.get_device_name(torch.cuda.current_device())
