@@ -27,5 +27,8 @@
     },
     "meta-llama/Llama-3.1-70B-Instruct": {
         "NVIDIA A100-SXM4-40GB": 3171.7420786883886
+    },
+    "meta-llama/Llama-3.1-8B": {
+        "NVIDIA A100-SXM4-40GB": 17349.338462800315
     }
 }

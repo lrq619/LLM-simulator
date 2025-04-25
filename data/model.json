@@ -103,7 +103,7 @@
     },
     "meta-llama/Llama-3.1-8B": {
         "num_hidden_layers": 32,
-        "num_heads": 32,
+        "num_heads": 8,
         "model_size_GB": 16.0,
         "kvc_size_KB": 512.0
     }
