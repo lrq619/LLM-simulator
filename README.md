@@ -8,6 +8,26 @@ conda create -n sim python=3.10
 conda activate sim
 pip install -r requirements.txt
 ```
+# Docker Usage
+Example:
+```
+docker run -p 8000:8000 lrq619/simulator
+```
+Curl the 8000 port by:
+```
+curl -X POST http://localhost:8000/simulate   -H "Content-Type: application/json"   -d '{
+    "model_name": "meta-llama/Llama-3.1-8B",
+    "gpu_name": "A100-NSCC",
+    "prompt_length": 10,
+    "response_length": 10
+  }'
+```
+And it should return the follow response:
+```
+{"ttft":0.0005763908532559647,"avg_tbt":0.017779744466145837,"e2e_latency":0.1783738355147143}
+```
+Notice: Only supports llama3.1 model, we're working on Qwen model.
+
 
 # Usage
 1. Check whether your gpu is in `data/gpu.json`, if not, run:
