@@ -19,7 +19,9 @@ curl -X POST http://localhost:8000/simulate   -H "Content-Type: application/json
     "model_name": "meta-llama/Llama-3.1-8B",
     "gpu_name": "A100-NSCC",
     "prompt_length": 10,
-    "response_length": 10
+    "response_length": 10,
+    "bsz: 1",
+    "tp_level: 1"
   }'
 ```
 And it should return the follow response:

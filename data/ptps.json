@@ -1,34 +1,35 @@
 {
-    "facebook/opt-6.7b": {
-        "NVIDIA A100 80GB PCIe": 13036.076255963511,
-        "NVIDIA RTX A5000": 5916.350915925302
-    },
-    "facebook/opt-125m": {
-        "NVIDIA A100 80GB PCIe": 89933.56687251454
+    "google/gemma-2-2b": {
+        "NVIDIA A100-SXM4-40GB": 40468.296322056499
     },
     "meta-llama/Meta-Llama-3-8B": {
-        "NVIDIA RTX A5000": 5498.487945041495,
-        "NVIDIA A100-SXM4-40GB": 16094.387119499119
-    },
-    "facebook/opt-30b": {
-        "NVIDIA A100 80GB PCIe": 3586.6321915518943
-    },
-    "meta-llama/Llama-2-13b-hf": {
-        "NVIDIA RTX A6000": 4164.15309163167
-    },
-    "Qwen/Qwen2.5-7B-Instruct-1M": {
-        "NVIDIA A100-SXM4-40GB": 15674.9143587909
+        "NVIDIA A100-SXM4-40GB": 16857.620408398812
     },
     "microsoft/Phi-3.5-mini-instruct": {
-        "NVIDIA A100-SXM4-40GB": 28179.509302932383
+        "NVIDIA A100-SXM4-40GB": 27764.6226800049653
     },
-    "google/gemma-2-2b": {
-        "NVIDIA A100-SXM4-40GB": 46867.7558645824
+    "agentica-org/DeepScaleR-1.5B-Preview": {
+        "NVIDIA A100-SXM4-40GB": 78948.3355174414
+    },
+    "deepseek-ai/DeepSeek-R1-Distill-Llama-8B": {
+        "NVIDIA A100-SXM4-40GB": 16942.111018806535
+    },
+    "deepseek-ai/DeepSeek-R1-Distill-Qwen-7B": {
+        "NVIDIA A100-SXM4-40GB": 18372.7721976173382
+    },
+    "Qwen/Qwen2.5-7B-Instruct-1M": {
+        "NVIDIA A100-SXM4-40GB": 18704.9036384016828
+    },
+    "Qwen/Qwen2.5-32B": {
+        "NVIDIA A100-SXM4-40GB": 12704.16557912111
+    },
+    "microsoft/Phi-4-mini-instruct": {
+        "NVIDIA A100-SXM4-40GB": 32120.70280549985
     },
     "meta-llama/Llama-3.1-70B-Instruct": {
-        "NVIDIA A100-SXM4-40GB": 3171.7420786883886
+        "NVIDIA A100-SXM4-40GB": 5876.751342488688
     },
     "meta-llama/Llama-3.1-8B": {
-        "NVIDIA A100-SXM4-40GB": 17349.338462800315
+        "NVIDIA A100-SXM4-40GB": 16960.42945345783
     }
 }

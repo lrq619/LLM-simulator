@@ -20,12 +20,17 @@ def profile_prompt_phase(llm, prompt_token_num: int, bsz: int=1):
 
     sample_param = SamplingParams(temperature=0, top_p=0.95, max_tokens=response_length, min_tokens=response_length - 1)
 
+    _ = llm.generate(prompts, sample_param) # warm up
     outputs = llm.generate(prompts, sample_param)
     prompt_phase_latencys = []
     for output in outputs:
         metrics = output.metrics
         prompt_phase_latency = metrics.first_token_time - metrics.first_scheduled_time
+        print(f"first_token_time: {metrics.first_token_time}, \n"
+              f"first_scheduled_time: {metrics.first_scheduled_time}, \n"
+              f"prompt_phase_latency: {prompt_phase_latency}")
         prompt_phase_latencys.append(prompt_phase_latency)
+        print(f"prompt_phase_latencys: {prompt_phase_latencys}")
 
     mean_prompt_phase_latency = np.asarray(prompt_phase_latencys).mean()
     
@@ -38,7 +43,7 @@ def verify_latency_prompt_num(model_name: str):
     bszs = [1,2,4,8,16]
     prompt_token_num = 1024
     latencys = []
-    llm = vllm.LLM(model=model_name)
+    llm = vllm.LLM(model=model_name, trust_remote_code=True, tensor_parallel_size=4)
     for bsz in bszs:
         prompt_phase_latency = profile_prompt_phase(
             llm=llm, 
@@ -53,13 +58,15 @@ def verify_latency_prompt_num(model_name: str):
     plt.ylabel(f"Prompt Phase Latency(s)")
     plt.ylim(0)
     plt.title(f"{model_name}\n Prompt Phase Latency with {prompt_token_num} Tokens Divided into Batches")
+    if not os.path.exists(f"results"):
+        os.makedirs(f"results")
     fig_file_name = f"results/prompt-latency-{prompt_token_num}tokens.png"
     plt.savefig(fig_file_name)
 
 def get_latency_vs_prompt_num(model_name: str, max_prompt_num: int) -> float:
     prompt_token_nums = range(16, max_prompt_num, 16)
     latencys = []
-    llm = vllm.LLM(model=model_name)
+    llm = vllm.LLM(model=model_name, tensor_parallel_size=4, trust_remote_code=True, gpu_memory_utilization=0.99, enforce_eager=True, max_model_len=2048)
     for prompt_token_num in prompt_token_nums:
         prompt_phase_latency = profile_prompt_phase(
             llm=llm, 
@@ -70,6 +77,8 @@ def get_latency_vs_prompt_num(model_name: str, max_prompt_num: int) -> float:
 
     slope, intercept, r_value, p_value, std_err = stats.linregress(latencys, prompt_token_nums)
     plt.plot(prompt_token_nums, latencys)
+    print(f"latencys:{latencys}")
+    print(f"prompt_token_nums:{prompt_token_nums}")
     plt.xlabel(f"Prompt Token Number")
     plt.ylabel(f"Prompt Phase Latency(s)")
     plt.ylim(0)
@@ -99,6 +108,7 @@ if __name__ == '__main__':
     # Get the prompt token process speed(ptps)(token/s) for this model
     model_post_fix = model_name.split('/')[-1]
     ptps = get_latency_vs_prompt_num(model_name=model_name, max_prompt_num=max_prompt_num)
+    print(f"ptps: {ptps}")
 
 
     # Ensure CUDA is available
