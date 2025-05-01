@@ -1,43 +1,37 @@
 {
-    "agentica-org/DeepScaleR-1.5B-Preview": {
-        "num_hidden_layers": 28,
-        "num_heads": 2,
-        "model_size_GB": 3.0,
-        "kvc_size_KB": 28.0
-    },
     "meta-llama/Meta-Llama-3-8B": {
         "num_hidden_layers": 32,
-        "num_heads": 8,
+        "num_kv_heads": 8,
         "model_size_GB": 16.0,
         "kvc_size_KB": 128.0
     },
     "microsoft/Phi-3.5-mini-instruct": {
         "num_hidden_layers": 32,
-        "num_heads": 32,
+        "num_kv_heads": 32,
         "model_size_GB": 7.6,
         "kvc_size_KB": 384.0
     },
     "google/gemma-2-2b": {
         "num_hidden_layers": 26,
-        "num_heads": 4,
+        "num_kv_heads": 4,
         "model_size_GB": 4.0,
         "kvc_size_KB": 117.0
     },
     "deepseek-ai/DeepSeek-R1-Distill-Llama-8B": {
         "num_hidden_layers": 32,
-        "num_heads": 8,
+        "num_kv_heads": 8,
         "model_size_GB": 16.0,
         "kvc_size_KB": 128.0
     },
     "deepseek-ai/DeepSeek-R1-Distill-Qwen-7B": {
         "num_hidden_layers": 28,
-        "num_heads": 4,
+        "num_kv_heads": 4,
         "model_size_GB": 14.0,
         "kvc_size_KB": 56.0
     },
     "Qwen/Qwen2.5-7B-Instruct-1M": {
         "num_hidden_layers": 28,
-        "num_heads": 4,
+        "num_kv_heads": 4,
         "model_size_GB": 14.0,
         "kvc_size_KB": 56.0
     },
@@ -61,8 +55,14 @@
     },
     "microsoft/Phi-4-mini-instruct": {
         "num_hidden_layers": 32,
-        "num_heads": 8,
+        "num_kv_heads": 8,
         "model_size_GB": 7.6,
-        "kvc_size_KB": 384.0
+        "kvc_size_KB": 128.0
+    },
+    "agentica-org/DeepScaleR-1.5B-Preview": {
+        "num_hidden_layers": 28,
+        "num_kv_heads": 2,
+        "model_size_GB": 3.0,
+        "kvc_size_KB": 28.0
     }
 }
