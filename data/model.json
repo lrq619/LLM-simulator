@@ -1,110 +1,68 @@
 {
-    "facebook/opt-6.7b": {
-        "num_hidden_layers": 32,
-        "num_heads": 32,
-        "model_size_GB": 13.4,
-        "kvc_size_KB": 512.0
-    },
-    "facebook/opt-13b": {
-        "num_hidden_layers": 40,
-        "num_heads": 40,
-        "model_size_GB": 26.0,
-        "kvc_size_KB": 800.0
-    },
-    "facebook/opt-30b": {
-        "num_hidden_layers": 48,
-        "num_heads": 56,
-        "model_size_GB": 60.0,
-        "kvc_size_KB": 1344.0
-    },
-    "facebook/opt-125m": {
-        "num_hidden_layers": 12,
-        "num_heads": 12,
-        "model_size_GB": 250.0,
-        "kvc_size_KB": 36.0
-    },
-    "facebook/opt-350m": {
-        "num_hidden_layers": 24,
-        "num_heads": 16,
-        "model_size_GB": 700.0,
-        "kvc_size_KB": 96.0
-    },
-    "facebook/opt-1.3b": {
-        "num_hidden_layers": 24,
-        "num_heads": 32,
-        "model_size_GB": 2.6,
-        "kvc_size_KB": 192.0
-    },
-    "facebook/opt-2.7b": {
-        "num_hidden_layers": 32,
-        "num_heads": 32,
-        "model_size_GB": 5.4,
-        "kvc_size_KB": 320.0
-    },
     "meta-llama/Meta-Llama-3-8B": {
         "num_hidden_layers": 32,
-        "num_heads": 32,
+        "num_kv_heads": 8,
         "model_size_GB": 16.0,
         "kvc_size_KB": 128.0
     },
-    "Qwen/Qwen-7B": {
-        "num_hidden_layers": 32,
-        "num_heads": 32,
-        "model_size_GB": 14.0,
-        "kvc_size_KB": 512.0
-    },
-    "meta-llama/Llama-2-13b-hf": {
-        "num_hidden_layers": 40,
-        "num_heads": 40,
-        "model_size_GB": 26.0,
-        "kvc_size_KB": 800.0
-    },
-    "meta-llama/Meta-Llama-3-8B-Instruct": {
-        "num_hidden_layers": 32,
-        "num_heads": 32,
-        "model_size_GB": 16.0,
-        "kvc_size_KB": 512.0
-    },
-    "Qwen/Qwen2.5-7B-Instruct-1M": {
-        "num_hidden_layers": 28,
-        "num_heads": 4,
-        "model_size_GB": 14.0,
-        "kvc_size_KB": 392.0
-    },
-    "microsoft/Phi-4-mini-instruct": {
-        "num_hidden_layers": 32,
-        "num_heads": 8,
-        "model_size_GB": 8,
-        "kvc_size_KB": 384.0
-    },
     "microsoft/Phi-3.5-mini-instruct": {
         "num_hidden_layers": 32,
-        "num_heads": 32,
-        "model_size_GB": -1,
+        "num_kv_heads": 32,
+        "model_size_GB": 7.6,
         "kvc_size_KB": 384.0
     },
     "google/gemma-2-2b": {
         "num_hidden_layers": 26,
-        "num_heads": 4,
+        "num_kv_heads": 4,
         "model_size_GB": 4.0,
-        "kvc_size_KB": 234.0
+        "kvc_size_KB": 117.0
     },
-    "meta-llama/Llama-3.3-70B-Instruct": {
-        "num_hidden_layers": 80,
-        "num_heads": 8,
-        "model_size_GB": 140.0,
-        "kvc_size_KB": 2560.0
+    "deepseek-ai/DeepSeek-R1-Distill-Llama-8B": {
+        "num_hidden_layers": 32,
+        "num_kv_heads": 8,
+        "model_size_GB": 16.0,
+        "kvc_size_KB": 128.0
+    },
+    "deepseek-ai/DeepSeek-R1-Distill-Qwen-7B": {
+        "num_hidden_layers": 28,
+        "num_kv_heads": 4,
+        "model_size_GB": 14.0,
+        "kvc_size_KB": 56.0
+    },
+    "Qwen/Qwen2.5-7B-Instruct-1M": {
+        "num_hidden_layers": 28,
+        "num_kv_heads": 4,
+        "model_size_GB": 14.0,
+        "kvc_size_KB": 56.0
+    },
+    "Qwen/Qwen2.5-32B": {
+        "num_hidden_layers": 64,
+        "num_kv_heads": 8,
+        "model_size_GB": 64.0,
+        "kvc_size_KB": 256.0
     },
     "meta-llama/Llama-3.1-70B-Instruct": {
         "num_hidden_layers": 80,
         "num_heads": 8,
         "model_size_GB": 140.0,
-        "kvc_size_KB": 2560.0
+        "kvc_size_KB": 320.0
     },
     "meta-llama/Llama-3.1-8B": {
         "num_hidden_layers": 32,
         "num_heads": 8,
         "model_size_GB": 16.0,
         "kvc_size_KB": 128.0
+    },
+    "microsoft/Phi-4-mini-instruct": {
+        "num_hidden_layers": 32,
+        "num_kv_heads": 8,
+        "model_size_GB": 7.6,
+        "kvc_size_KB": 128.0
+    },
+    "agentica-org/DeepScaleR-1.5B-Preview": {
+        "num_hidden_layers": 28,
+        "num_kv_heads": 2,
+        "model_size_GB": 3.0,
+        "kvc_size_KB": 28.0
     }
 }

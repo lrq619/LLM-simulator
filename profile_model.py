@@ -26,30 +26,32 @@ def profile_model(model_name):
     num_hidden_layers = config.num_hidden_layers if hasattr(config, 'num_hidden_layers') else None
     print(config)
     if hasattr(config, "num_key_values_heads"):
-        num_heads = config.num_key_values_heads
+        num_kv_heads = config.num_key_values_heads
     elif hasattr(config, "num_key_value_heads"):
-        num_heads = config.num_key_value_heads
+        num_kv_heads = config.num_key_value_heads
     else:
-        num_heads = config.num_attention_heads 
+        num_kv_heads = None
+        
+    num_attention_heads = config.num_attention_heads 
     # Regular expression pattern to find the number
     pattern = r"/([^\s/]+)-(\d+\.\d+|\d+)(b|m|B)"
     match = re.search(pattern, model_name)
     try:
         num_params = float(match.group(2))
-        model_size_GB = (num_params * 2)  # Assuming parameters are 32-bit floats, 2 bytes each
+        model_size_GB = (num_params * 2)  # Assuming parameters are 16-bit floats, 2 bytes each
     except:
         num_params = -1
         model_size_GB = -1
 
     # Calculate kvc_size_KB
-    d_head = (config.hidden_size // num_heads) if num_heads else None
+    d_head = (config.hidden_size // num_attention_heads) if num_attention_heads else None
     precision_bytes = 2  # Assuming we're working with 16-bit precision for this calculation
-    kvc_size_KB = (2 * num_hidden_layers * num_heads * d_head * precision_bytes) / 1024 if num_heads and d_head else None
+    kvc_size_KB = (2 * num_hidden_layers * num_kv_heads * d_head * precision_bytes) / 1024 if num_kv_heads and d_head else None
 
     # Update JSON object
     json_obj[model_name] = {
         "num_hidden_layers": num_hidden_layers,
-        "num_heads": num_heads,
+        "num_kv_heads": num_kv_heads,
         "model_size_GB": model_size_GB,
         "kvc_size_KB": kvc_size_KB
     }

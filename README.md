@@ -19,7 +19,9 @@ curl -X POST http://localhost:8000/simulate   -H "Content-Type: application/json
     "model_name": "meta-llama/Llama-3.1-8B",
     "gpu_name": "A100-NSCC",
     "prompt_length": 10,
-    "response_length": 10
+    "response_length": 10,
+    "bsz: 1",
+    "tp_level: 1"
   }'
 ```
 And it should return the follow response:
@@ -51,7 +53,7 @@ Check `data/ptps.json`, it should have a `(model, gpu)` pair entry.
 
 4. After all these profiling, run simulator using(Profiling only needs to be performed once for each `(model, gpu)` pair):
 ```
-python simulate.py --model-name <model-name> --gpu-name <gpu-name> --prompt-length <p-length> --response-length <r-length>
+python simulate.py --model-name <model-name> --tp-level <tp-level> --gpu-name <gpu-name> --prompt-length <p-length> --response-length <r-length>
 ```
 It would print out a list of float
 ```

@@ -1,3 +1,4 @@
+import numpy as np
 from typing import List, Set, Optional, Dict, Tuple
 from cluster_simulator.time_series import EventTimestamp, TimeSeriesFunction
 class GPUInfo:
