@@ -43,13 +43,13 @@
     },
     "meta-llama/Llama-3.1-70B-Instruct": {
         "num_hidden_layers": 80,
-        "num_heads": 8,
+        "num_kv_heads": 8,
         "model_size_GB": 140.0,
         "kvc_size_KB": 320.0
     },
     "meta-llama/Llama-3.1-8B": {
         "num_hidden_layers": 32,
-        "num_heads": 8,
+        "num_kv_heads": 8,
         "model_size_GB": 16.0,
         "kvc_size_KB": 128.0
     },

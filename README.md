@@ -20,8 +20,8 @@ curl -X POST http://localhost:8000/simulate   -H "Content-Type: application/json
     "gpu_name": "A100-NSCC",
     "prompt_length": 10,
     "response_length": 10,
-    "bsz: 1",
-    "tp_level: 1"
+    "bsz": 1,
+    "tp_level": 1
   }'
 ```
 And it should return the follow response:
