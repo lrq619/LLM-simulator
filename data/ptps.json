@@ -21,7 +21,10 @@
         "NVIDIA A100-SXM4-40GB": 18704.9036384016828
     },
     "Qwen/Qwen2.5-32B": {
-        "NVIDIA A100-SXM4-40GB": 12704.16557912111
+        "NVIDIA A100-SXM4-40GB": {
+            "ptps": 12634.024814286706,
+            "intercept": -250.5874215203637
+        }
     },
     "microsoft/Phi-4-mini-instruct": {
         "NVIDIA A100-SXM4-40GB": 32120.70280549985
