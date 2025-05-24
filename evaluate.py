@@ -7,13 +7,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 from simulate import simulate
 
-def run_simulator(model_name: str, cuda_device_name: str, prompt_length: int, response_length: int, bsz=1) -> tuple[float, float]:
+def run_simulator(model_name: str, cuda_device_name: str, prompt_length: int, response_length: int, bsz=1, tp_level=1) -> tuple[float, float]:
     latencys, alpha, beta, c = simulate(
         model_name=model_name, 
         cuda_device_name=cuda_device_name, 
         prompt_length=prompt_length, 
         response_length=response_length,
-        bsz=bsz
+        bsz=bsz,
+        tp_level=tp_level
     )
 
     prompt_phase_latency = latencys[0]
@@ -46,8 +47,9 @@ def run_vllm(llm: vllm.LLM, cuda_device_name: str, prompt_length: int, response_
     return mean_prompt_phase_latency, mean_token_phase_latency
 
 
-model_name = "meta-llama/Meta-Llama-3.1-70B"
-llm = vllm.LLM(model=model_name, tensor_parallel_size=4, enforce_eager=True)
+model_name = "meta-llama/Llama-3.1-8B"
+tp_level = 1
+llm = vllm.LLM(model=model_name, tensor_parallel_size=tp_level, enforce_eager=True, dtype="float16")
 
 if torch.cuda.is_available():
     cuda_device_name = torch.cuda.get_device_name(torch.cuda.current_device())
@@ -73,6 +75,7 @@ for response_length in response_lengths:
         prompt_length=prompt_length,
         response_length=response_length,
         bsz=bsz,
+        tp_level=tp_level
     )
     sim_prompt_phase_latencys.append(sim_prompt_phase_latency)
     sim_token_phase_latencys.append(sim_token_phase_latency)

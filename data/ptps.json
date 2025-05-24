@@ -30,6 +30,9 @@
         "NVIDIA A100-SXM4-40GB": 5876.751342488688
     },
     "meta-llama/Llama-3.1-8B": {
-        "NVIDIA A100-SXM4-40GB": 16960.42945345783
+        "NVIDIA A100-SXM4-40GB": {
+            "ptps": 17073.714373857543,
+            "intercept": -249.89782030807214
+        }
     }
 }
