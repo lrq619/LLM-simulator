@@ -63,11 +63,11 @@ def verify_latency_prompt_num(model_name: str):
     fig_file_name = f"results/prompt-latency-{prompt_token_num}tokens.png"
     plt.savefig(fig_file_name)
 
-def get_latency_vs_prompt_num(model_name: str, max_prompt_num: int) -> float:
+def get_latency_vs_prompt_num(model_name: str, max_prompt_num: int, tp_level: int) -> tuple[float, float]:
     prompt_token_nums = range(16, max_prompt_num, 16)
     latencys = []
     #for small model, we should set the tp level to 1 and big for 4
-    llm = vllm.LLM(model=model_name, tensor_parallel_size=4, trust_remote_code=True, gpu_memory_utilization=0.99, enforce_eager=True, max_model_len=2048)
+    llm = vllm.LLM(model=model_name, tensor_parallel_size=tp_level, trust_remote_code=True, gpu_memory_utilization=0.99, enforce_eager=True, max_model_len=2048)
     for prompt_token_num in prompt_token_nums:
         prompt_phase_latency = profile_prompt_phase(
             llm=llm, 
@@ -88,7 +88,7 @@ def get_latency_vs_prompt_num(model_name: str, max_prompt_num: int) -> float:
     fig_file_name = f"results/{model_post_fix}-prompt-latencys.png"
     plt.savefig(fig_file_name)
 
-    return slope
+    return slope, intercept
 
 if __name__ == '__main__':
     # Create the parser
@@ -97,18 +97,18 @@ if __name__ == '__main__':
     # Add the argument for model name
     parser.add_argument('--model-name', type=str, help="Specify the model name", required=True)
     parser.add_argument('--max-prompt-num', type=int, help="Specify the maximal number of prompt tokens that is going to be profiled", required=False, default=2048)
-
+    parser.add_argument('--tp-level', type=int, help="Specify the tensor parallel level", required=False, default=1)
     # Parse the arguments
     args = parser.parse_args()
 
     # Extract the model name from the command line arguments
     model_name: str = args.model_name
     max_prompt_num: int = args.max_prompt_num
-
+    tp_level: int = args.tp_level
     # verify_latency_prompt_num(model_name=model_name)
     # Get the prompt token process speed(ptps)(token/s) for this model
     model_post_fix = model_name.split('/')[-1]
-    ptps = get_latency_vs_prompt_num(model_name=model_name, max_prompt_num=max_prompt_num)
+    ptps, intercept = get_latency_vs_prompt_num(model_name=model_name, max_prompt_num=max_prompt_num, tp_level=tp_level)
     print(f"ptps: {ptps}")
 
 
@@ -138,7 +138,10 @@ if __name__ == '__main__':
     # Update the JSON object with the new data
     if model_name not in json_obj:
         json_obj[model_name] = {}
-    json_obj[model_name][cuda_device_name] = ptps
+    json_obj[model_name][cuda_device_name] = {
+        "ptps": ptps,
+        "intercept": intercept
+    }
 
     # Write the JSON object back to the file
     with open(data_json_filename, 'w') as file:

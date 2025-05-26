@@ -21,7 +21,10 @@
         "NVIDIA A100-SXM4-40GB": 18704.9036384016828
     },
     "Qwen/Qwen2.5-32B": {
-        "NVIDIA A100-SXM4-40GB": 12704.16557912111
+        "NVIDIA A100-SXM4-40GB": {
+            "ptps": 12634.024814286706,
+            "intercept": -250.5874215203637
+        }
     },
     "microsoft/Phi-4-mini-instruct": {
         "NVIDIA A100-SXM4-40GB": 32120.70280549985
@@ -30,6 +33,9 @@
         "NVIDIA A100-SXM4-40GB": 5876.751342488688
     },
     "meta-llama/Llama-3.1-8B": {
-        "NVIDIA A100-SXM4-40GB": 16960.42945345783
+        "NVIDIA A100-SXM4-40GB": {
+            "ptps": 17073.714373857543,
+            "intercept": -249.89782030807214
+        }
     }
 }

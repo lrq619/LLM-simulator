@@ -47,7 +47,7 @@ Check `data/model.json`, it should have an entry of the corresponding model.
 3. Check whether the `(model, gpu)` pair is in `data/ptps.json`, if not, we need to profile the model's prompt phase behaviour on the specific gpu.
 Run:
 ```
-python profile_prompt.py --model-name <model-name> 
+python profile_prompt.py --model-name <model-name> --tp-level <tp-level>
 ```
 Check `data/ptps.json`, it should have a `(model, gpu)` pair entry.
 

@@ -48,7 +48,7 @@ def get_model_info(model_name: str) -> Tuple[int, int, float, float]:
         print(e)
         raise Exception(f"Could not find model information for {model_name} in {json_file_name}, consider first running: \npython profile_model.py --model-name={model_name}\n and check {json_file_name}")
 
-def get_ptps(model_name: str, cuda_device_name: str) -> float:
+def get_ptps(model_name: str, cuda_device_name: str) -> Tuple[float, float]:
     json_file_name = os.path.join(PROJECT_ROOT_PATH,"./data/ptps.json")
     try:
         if not os.path.exists(json_file_name):
@@ -57,8 +57,8 @@ def get_ptps(model_name: str, cuda_device_name: str) -> float:
 
         with open(json_file_name, 'r') as file:
             data = json.load(file)
-        ptps = data[model_name][cuda_device_name]
-        return ptps
+        ptps, intercept = data[model_name][cuda_device_name]["ptps"], data[model_name][cuda_device_name]["intercept"]
+        return ptps, intercept
     except Exception as e:
         print(e)
         raise Exception(f"Could not find ptps for {model_name} and {cuda_device_name} in {json_file_name}, consider first running: \npython profile_prompt.py --model-name={model_name}\n and check {json_file_name}")
@@ -79,7 +79,7 @@ def simulate(model_name: str, cuda_device_name: str, prompt_length: int, respons
         num_hidden_layers, num_kv_heads, model_size_GB, kvc_size_KB = get_model_info(model_name=model_name)
 
         # Finally get ptps
-        ptps = get_ptps(model_name=model_name, cuda_device_name=cuda_device_name)
+        ptps, intercept = get_ptps(model_name=model_name, cuda_device_name=cuda_device_name)
 
     except Exception as e:
         print(e)
@@ -89,7 +89,7 @@ def simulate(model_name: str, cuda_device_name: str, prompt_length: int, respons
 
     # Prompt Phase Latency
     prompt_token_num = prompt_length * bsz
-    prompt_phase_latency = prompt_token_num / ptps
+    prompt_phase_latency = (prompt_token_num - intercept) / ptps
     latencys.append(prompt_phase_latency)
 
     kvc_size_GB = kvc_size_KB / (1024**2)

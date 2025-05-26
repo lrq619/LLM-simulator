@@ -13,7 +13,7 @@ class ModelRequest(BaseModel):
     prompt_length: int = Field(1024, description="Number of tokens in prompt")
     response_length: int = Field(128, description="Number of tokens in response")
     bsz: int = Field(1, description="Batch size")
-    tp_level: int = Field(4, description="Tensor Parallelism Level")
+    tp_level: int = Field(1, description="Tensor Parallelism Level")
 
 @app.post("/simulate")
 async def simulate_latency(request: ModelRequest):
