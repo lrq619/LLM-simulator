@@ -6,59 +6,21 @@ import matplotlib.pyplot as plt
 import json
 from cluster_simulator import PROJECT_DIR
 from cluster_simulator import simulate
+from cluster_simulator.common import TimeSeriesFunction, EventTimestamp
+from cluster_simulator.autoscaler import InstanceManager, concurrency_window, monitor_concurrency, get_concurrencys
 from tqdm import tqdm
 import time
 from typing import Tuple, List
 
+SLO = 2
 TRACE_TIME_SPAN = 3600 * 1000 # trace is one hour 3600 * 1000 milliseconds
 TIME_DELTA = 0.001 # the value changes in a very short time to simulate pulse function
-
-class EventTimestamp:
-    def __init__(self, ts, event):
-        self.ts = ts
-        self.event = event
-
-class TimeSeriesFunction:
-    def __init__(self, timestamps, values):
-        """
-        keypoints: List of (timestamp, value) tuples.
-        """
-        self.timestamps = np.asarray(timestamps)    
-        self.values = np.asarray(values)
-        self.interpolator = scipy.interpolate.interp1d(self.timestamps, self.values, kind='linear', fill_value="extrapolate")
-
-    def evaluate(self, t):
-        return float(self.interpolator(t))
-
-    def sample(self,num_points=100):
-        min_timestamp = min(self.timestamps)
-        max_timestamp = max(self.timestamps)
-        delta_time = (max_timestamp - min_timestamp) / num_points
-        sampled_timestamps = [min_timestamp + delta_time * (i+1) for i in range(num_points)]
-        sampled_values = [self.evaluate(t) for t in sampled_timestamps]
-        return sampled_timestamps, sampled_values
-
-
-    def plot(self, num_points=100):
-        """Plot the interpolated function and return a matplotlib.figure.Figure instance."""
-        fig, ax = plt.subplots(figsize=(8, 4))
-
-        ax.plot(self.timestamps, self.values, color="red", label="Key Points", zorder=3)
-
-        ax.set_xlabel("Time")
-        ax.set_ylabel("Value")
-        ax.grid(True)
-
-        return fig  # Return the figure instance
-
-    def __repr__(self):
-        return repr(self.data)
         
 def convert_request_to_event_ts(request_json, model_name, gpu_name) -> Tuple[EventTimestamp, EventTimestamp]:
-    arrive_ts = request_json["timestamp"] # is ms
-    request_data = request_json["data"]
+    arrive_ts = request_json["Request"]["timestamp"] # is ms
+    request_data = request_json["Request"]["data"]
     prompt = request_data["prompt"]
-    response_length = request_data["max_response_length"]
+    response_length = request_data["max_tokens"]
     prompt_length = len(prompt.split(" "))
     latencys, _,_,_ = simulate(
         model_name=model_name,
@@ -67,14 +29,13 @@ def convert_request_to_event_ts(request_json, model_name, gpu_name) -> Tuple[Eve
         response_length=response_length,
     )
     e2e_latency = sum(latencys) * 1000
-    finish_ts = arrive_ts + e2e_latency
+    finish_ts = arrive_ts + e2e_latency * SLO
 
     arrive_event_ts = EventTimestamp(arrive_ts, event="arrive")
     finish_event_ts = EventTimestamp(finish_ts, event="finish")
     
      
     return arrive_event_ts, finish_event_ts
-
 
 def convert_processed_trace_to_concurrency_series(processed_trace_file_path, model_name, gpu_name) -> TimeSeriesFunction:
     with open(processed_trace_file_path, 'r') as f:
@@ -98,13 +59,26 @@ def convert_processed_trace_to_concurrency_series(processed_trace_file_path, mod
             concurrency -= 1
         concurrencys.append(concurrency)
 
-
     concurrency_series = TimeSeriesFunction(timestamps=timestamps, values=concurrencys)
     return concurrency_series
         
-def convert_concurrency_to_chunk_number_series(concurrency_series:TimeSeriesFunction, target: int) -> TimeSeriesFunction:
+def convert_concurrency_to_chunk_number_series(concurrency_series:TimeSeriesFunction, autoscale: str, target: int) -> TimeSeriesFunction:
     timestamps = concurrency_series.timestamps
-    concurrencys = concurrency_series.values
+    if autoscale == "default":
+        print(f"I used default now!!!")
+        concurrencys = concurrency_series.values
+    elif autoscale == "kpa":
+        print(f"I used kpa now!!!")
+        concurrency_sec_series = monitor_concurrency(concurrency_series)
+        concurrencys = get_concurrencys(concurrency_series, concurrency_sec_series)
+    elif autoscale == "hpa":
+        print(f"I used hpa now!!!")
+        concurrency_sec_series = monitor_concurrency(concurrency_series)
+        concurrencys = get_concurrencys(concurrency_series, concurrency_sec_series)
+    elif autoscale == "apa":
+        print(f"I used apa now!!!")
+        concurrency_sec_series = monitor_concurrency(concurrency_series)
+        concurrencys = get_concurrencys(concurrency_series, concurrency_sec_series)
     # Notice the times of chunk number don't need 1 more chunk
     chunk_number = np.where((concurrencys >= target) & (concurrencys % target == 0), 
                         concurrencys // target, 

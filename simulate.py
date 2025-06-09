@@ -89,14 +89,17 @@ def simulate(model_name: str, cuda_device_name: str, prompt_length: int, respons
 
     # Prompt Phase Latency
     prompt_token_num = prompt_length * bsz
+    # cache_usage = model_size_GB + prompt_token_num * kvc_size_GB
     prompt_phase_latency = (prompt_token_num - intercept) / ptps
     latencys.append(prompt_phase_latency)
+    # cache_usage.append(cache_usage)
 
     kvc_size_GB = kvc_size_KB / (1024**2)
     for i in range(response_length):
-        token_phase_latency = (model_size_GB + bsz * (prompt_length + i) * kvc_size_GB) / (practical_mem_bw * tp_level)
+        cache_usage = model_size_GB + bsz * (prompt_length + i) * kvc_size_GB
+        token_phase_latency = cache_usage / (practical_mem_bw * tp_level)
         latencys.append(token_phase_latency)
-
+        # cache_usage.append(cache_usage)
     # alpha, beta, c in README
     alpha = kvc_size_GB / (2*practical_mem_bw)
     beta = (prompt_length + 0.5) * kvc_size_GB / practical_mem_bw

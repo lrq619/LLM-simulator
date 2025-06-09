@@ -7,6 +7,7 @@ from cluster_simulator import simulate, PROJECT_DIR
 from cluster_simulator.trace import process_trace
 from cluster_simulator.time_series import convert_processed_trace_to_concurrency_series, convert_concurrency_to_chunk_number_series,extract_alloc_free_events, TimeSeriesFunction, EventTimestamp
 from cluster_simulator.hardware import ClusterManager, NodeInfo, GPUInfo
+from cluster_simulator.autoscaler import save_timeseries_to_json
 MAX_CHUNK_SIZE = 4
 from typing import List
 os.makedirs(f"{PROJECT_DIR}/results", exist_ok=True)
@@ -14,9 +15,11 @@ os.makedirs(f"{PROJECT_DIR}/results", exist_ok=True)
 def main():
     parser = argparse.ArgumentParser(description="cluster level simulator")
     parser.add_argument("--config", type=str, default="./cluster_simulator/config.json")
+    parser.add_argument("--autoscale", type=str, default="kpa")
 
     args = parser.parse_args()
     config_file = args.config
+    autoscale = args.autoscale
     with open(config_file, 'r') as f:
         config = json.load(f)
 
@@ -30,6 +33,7 @@ def main():
     gpu_operations = []
     for workload_id, workload_config in enumerate(workloads):
         chunk_size = workload_config.get("tp_level", 1)
+        print(f"Processing trace for workload {workload_id} with chunk size {chunk_size}")
         processed_trace_file_path = process_trace(
             trace_path=workload_config["trace_path"],
             sampling_rate=workload_config["sampling_rate"],
@@ -44,7 +48,7 @@ def main():
         ax.set_ylabel(f"Concurrency")
         ax.set_xlabel(f"Timestamps")
         fig.savefig(f"{PROJECT_DIR}/results/concurrency_{workload_id}.png")
-        chunk_number_series = convert_concurrency_to_chunk_number_series(concurrency_series, workload_config['target'])
+        chunk_number_series = convert_concurrency_to_chunk_number_series(concurrency_series, autoscale, workload_config['target'])
         fig = chunk_number_series.plot()
         ax = fig.gca()
         ax.set_ylabel(f"GPU Chunk Number")
@@ -56,9 +60,18 @@ def main():
 
     idle_gpu_number_series, cont_gpu_number_series, alloc_events = cluster_manager.replay(gpu_operations, max_chunk_size=MAX_CHUNK_SIZE)
     process_alloc_events(alloc_events)
+    alloc_success_number = node_number * gpu_number - idle_gpu_number_series.values
+    alloc_success_number_series = TimeSeriesFunction(idle_gpu_number_series.timestamps, alloc_success_number)
+    fig = alloc_success_number_series.plot()
+    ax = fig.gca() 
+    ax.set_ylabel(f"Alloc Success Number")
+    ax.set_xlabel(f"Timestamps")
+    fig.savefig(f"{PROJECT_DIR}/results/alloc_success_number.png")
+    save_timeseries_to_json(alloc_success_number_series, f"{PROJECT_DIR}/results/alloc_success_number.json")
     
     # Get the failure alloc series, when the try_alloc_gpu_number is larger than the idle_gpu_number
     failure_alloc_series = get_failure_alloc_series(alloc_events)
+    
     plot_fragmentation_gpu_number(failure_alloc_series).savefig(f"{PROJECT_DIR}/results/fragmentation_gpu_number.png")
     plot_idle_and_cont_gpu_numbers(idle_gpu_number_series, cont_gpu_number_series).savefig(f"{PROJECT_DIR}/results/gpu_number.png")
     sampled_idle_gpu_timestamps, sampled_idle_gpu_number = idle_gpu_number_series.sample()
@@ -131,7 +144,6 @@ def plot_idle_and_cont_gpu_numbers_cdf(sampled_idle_gpu_number, sampled_cont_gpu
     ax.legend()
     ax.grid(True)
     return fig
-        
 
 def plot_fragmentation_gpu_number(failure_alloc_series: TimeSeriesFunction) -> plt.Figure:
     fig, ax = plt.subplots(figsize=(8,4))

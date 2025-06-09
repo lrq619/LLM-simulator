@@ -38,17 +38,22 @@ def test_time_series_function():
 def test_convert_request_to_event_ts():
     
     request_json = {
-        "timestamp": 26,
-        "data": {
-            "prompt": "test prompt",
-            "max_response_length": 100,
-            "model_name": "meta-llama/Meta-Llama-3-8B",
-            "global_request_id": 0
+        "GlobalID":{
+            "global_id": 0
+        },
+        "Request":{
+            "timestamp": 26,
+            "data": {
+                "prompt": "test prompt",
+                "max_response_length": 100,
+                "model_name": "meta-llama/Meta-Llama-3-8B",
+                "global_request_id": 0
         },
         "attributes": {
             "global_id": 0
+        }
             }
-    }
+        }
     
     gpu_name = "NVIDIA A100-SXM4-40GB"
     model_name = "meta-llama/Meta-Llama-3-8B"
