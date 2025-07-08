@@ -1,0 +1,21 @@
+kind: PodAutoscaler
+metadata:
+  name: Llama-3.1-8B-apa
+  namespace: default
+  annotations:
+    up-fluctuation-tolerance: '0.1'
+    down-fluctuation-tolerance: '0.2'
+    window: 30s
+spec:
+  scalingStrategy: APA
+  minReplicas: 1
+  maxReplicas: 8
+  metricsSources:
+    - metricSourceType: pod
+      protocolType: http
+      port: '8000'
+      path: /metrics
+      targetMetric: gpu_cache_usage_perc
+      targetValue: '70'
+  scaleTargetRef:
+    name: Llama-3.1-8B

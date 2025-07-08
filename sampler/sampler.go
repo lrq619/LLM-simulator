@@ -5,23 +5,30 @@ import (
 	"log"
 	"math"
 	"math/rand"
+	"runtime"
 	"sort"
-
 	"strings"
-
+	"sync"
 )
 
 type TraceManager struct {
-	data       []ProcessedEntry
-	randomSeed int64
-	promptName string
+	data           []GlobalIDEntry
+	randomSeed     int64
+	promptName     string
+	promptTokenMap map[int]float64
 }
 
-func NewTraceManager(data []ProcessedEntry, seed int64, promptName string) (*TraceManager, error) {
+type task struct {
+	idx   int
+	value string
+}
+
+func NewTraceManager(data []GlobalIDEntry, seed int64, promptName string) (*TraceManager, error) {
 	t := &TraceManager{
-		data:       data,
-		promptName: promptName,
-		randomSeed: seed,
+		data:           data,
+		promptName:     promptName,
+		randomSeed:     seed,
+		promptTokenMap: make(map[int]float64),
 	}
 
 	t.data = data
@@ -31,11 +38,23 @@ func NewTraceManager(data []ProcessedEntry, seed int64, promptName string) (*Tra
 		return nil, fmt.Errorf("data is empty")
 	}
 
-	return t, nil
+	if t.promptName == "None" {
+		r := rand.New(rand.NewSource(t.randomSeed))
+		for i := range t.data {
+			t.promptTokenMap[i] = float64(r.Intn(4000) + 1) // Random token count between 1 and 4000
+		}
+	} else {
+		var err error
+		t.promptTokenMap, err = CountPromptTokens(t.data, t.promptName)
+		if err != nil {
+			return nil, fmt.Errorf("failed to count prompt tokens: %v", err)
+		}
+	}
 
+	return t, nil
 }
 
-func (t *TraceManager) SampleData(data []ProcessedEntry, size int) ([]ProcessedEntry, error) {
+func (t *TraceManager) SampleData(data []GlobalIDEntry, size int, seed int64) ([]GlobalIDEntry, error) {
 	if size == 0 {
 		return nil, fmt.Errorf("sample size is zero")
 	}
@@ -43,9 +62,9 @@ func (t *TraceManager) SampleData(data []ProcessedEntry, size int) ([]ProcessedE
 		return data, nil
 	}
 
-	r := rand.New(rand.NewSource(t.randomSeed))
+	r := rand.New(rand.NewSource(seed))
 	indices := r.Perm(len(data))[:size]
-	sampled := make([]ProcessedEntry, size)
+	sampled := make([]GlobalIDEntry, size)
 	for i, idx := range indices {
 		sampled[i] = data[idx]
 	}
@@ -91,40 +110,89 @@ func computeWassersteinDistance(x, y []float64) float64 {
 	return distance
 }
 
-func (t *TraceManager) ComputeWasserstein(original, sample []ProcessedEntry) ([]float64, error) {
-	origPrompt := make([]float64, len(original))
-	samplePrompt := make([]float64, len(sample))
-	promptName := t.promptName
+func CountPromptTokens(entries []GlobalIDEntry, promptName string) (map[int]float64, error) {
+	numWorkers := runtime.NumCPU()
+	taskCh := make(chan task, numWorkers*2)
+	result := make(map[int]float64, len(entries))
+	errCh := make(chan error, 1)
+	var wg sync.WaitGroup
+	var mu sync.Mutex
 
-	for i, entry := range original {
-		value, exists := entry.Data[promptName]
-		if !exists {
-			return nil, fmt.Errorf("prompt name '%s' not found in original entry", promptName)
-		}
-		prompt := strings.Fields(value.(string))
-		origPrompt[i] = float64(len(prompt) + 1)
+	// start up the worker pool
+	for w := 0; w < numWorkers; w++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for t := range taskCh {
+				count := float64(strings.Count(t.value, " ")) + 1
+				mu.Lock()
+				result[t.idx] = count
+				mu.Unlock()
+			}
+		}()
 	}
 
-	for i, entry := range sample {
-		value, exists := entry.Data[promptName]
+	// dispatch tasks
+	for i, entry := range entries {
+		valueRaw, exists := entry.Request.Data[promptName]
 		if !exists {
-			return nil, fmt.Errorf("prompt name '%s' not found in sample entry", promptName)
+			errCh <- fmt.Errorf("prompt name '%s' not found in entry at index %d", promptName, i)
+			close(taskCh)
+			wg.Wait()
+			return nil, <-errCh
 		}
-		prompt := strings.Fields(value.(string))
-		samplePrompt[i] = float64(len(prompt) + 1)
+		value, ok := valueRaw.(string)
+		if !ok {
+			errCh <- fmt.Errorf("prompt value at index %d is not a string", i)
+			close(taskCh)
+			wg.Wait()
+			return nil, <-errCh
+		}
+		taskCh <- task{idx: i, value: value}
+	}
+
+	close(taskCh)
+	wg.Wait()
+
+	select {
+	case err := <-errCh:
+		return nil, err
+	default:
+	}
+
+	return result, nil
+}
+
+func (t *TraceManager) ComputeWasserstein(original, sample []int) ([]float64, error) {
+	origPrompt := make([]float64, len(original))
+	for i, key := range original {
+		origPrompt[i] = t.promptTokenMap[key]
+	}
+
+	samplePrompt := make([]float64, len(sample))
+	for i, key := range sample {
+		samplePrompt[i] = t.promptTokenMap[key]
 	}
 
 	distances := []float64{computeWassersteinDistance(origPrompt, samplePrompt)}
-
 	return distances, nil
 }
 
-func (t *TraceManager) GetMostRepresentativeSample(candidates [][]ProcessedEntry, original []ProcessedEntry) []ProcessedEntry {
-	var bestSample []ProcessedEntry
+func (t *TraceManager) GetMostRepresentativeSample(candidates [][]GlobalIDEntry, original []GlobalIDEntry) []GlobalIDEntry {
+	var bestSample []GlobalIDEntry
 	bestDistance := math.Inf(1)
+	originalKeys := make([]int, len(original))
+
+	for i, entry := range original {
+		originalKeys[i] = entry.GlobalID
+	}
 
 	for _, candidate := range candidates {
-		distances, err := t.ComputeWasserstein(original, candidate)
+		candidateKeys := make([]int, len(candidate))
+		for i, cand := range candidate {
+			candidateKeys[i] = cand.GlobalID
+		}
+		distances, err := t.ComputeWasserstein(originalKeys, candidateKeys)
 		if err != nil {
 			log.Fatalf("failed to compute wasserstein distance: %v", err)
 		}
@@ -138,21 +206,21 @@ func (t *TraceManager) GetMostRepresentativeSample(candidates [][]ProcessedEntry
 	return bestSample
 }
 
-func (t *TraceManager) RecursiveRollDownSampling(trialsNum int, maxFraction, minFraction, fractionStep float64) map[float64][]ProcessedEntry {
-	results := make(map[float64][]ProcessedEntry)
+func (t *TraceManager) RecursiveRollDownSampling(trialsNum int, maxFraction, minFraction, fractionStep float64) map[float64][]GlobalIDEntry {
+	results := make(map[float64][]GlobalIDEntry)
 	totalEntries := len(t.data)
 	maxSize := int(float64(totalEntries) * maxFraction)
 	minSize := int(float64(totalEntries) * minFraction)
 	stepSize := int(float64(totalEntries) * fractionStep)
 
-	currentSample, _ := t.SampleData(t.data, maxSize)
+	currentSample, _ := t.SampleData(t.data, maxSize, t.randomSeed)
 	results[maxFraction] = currentSample
 	previousSample := currentSample
 
 	for size := maxSize - stepSize; size >= minSize; size -= stepSize {
-		candidates := make([][]ProcessedEntry, trialsNum)
+		candidates := make([][]GlobalIDEntry, trialsNum)
 		for i := 0; i < trialsNum; i++ {
-			candidates[i], _ = t.SampleData(previousSample, size)
+			candidates[i], _ = t.SampleData(previousSample, size, int64(i))
 		}
 
 		mostRepSample := t.GetMostRepresentativeSample(candidates, previousSample)
@@ -168,20 +236,29 @@ func roundToTwoDecimals(value float64) float64 {
 	return math.Round(value*100) / 100
 }
 
-func (t *TraceManager) analyzeSamples(samples map[float64][]ProcessedEntry) map[float64][]float64 {
-	original := t.data
-	stats := make(map[float64][]float64)
-	for fraction, sample := range samples {
-		wDist, err := t.ComputeWasserstein(original, sample)
-		if err != nil {
-			log.Fatalf("failed to compute wasserstein distance: %v", err)
-		}
+// func (t *TraceManager) analyzeSamples(samples map[float64][]GlobalIDEntry) map[float64][]float64 {
+// 	original := t.data
+// 	originalKeys := make([]int, len(t.data))
+// 	for i, entry := range original {
+// 		originalKeys[i] = entry.GlobalID
+// 	}
 
-		stats[fraction] = wDist
+// 	stats := make(map[float64][]float64)
+// 	for fraction, sample := range samples {
+// 		sampleKeys := make([]int, len(sample))
+// 		for i, samp := range sample {
+// 			sampleKeys[i] = samp.GlobalID
+// 		}
+// 		wDist, err := t.ComputeWasserstein(originalKeys, sampleKeys)
+// 		if err != nil {
+// 			log.Fatalf("failed to compute wasserstein distance: %v", err)
+// 		}
 
-	}
-	return stats
-}
+// 		stats[fraction] = wDist
+
+// 	}
+// 	return stats
+// }
 
 // func (t *TraceManager) plotWasserstein(stats map[float64][]float64) {
 // 	var fractions []float64
@@ -227,13 +304,13 @@ func (t *TraceManager) analyzeSamples(samples map[float64][]ProcessedEntry) map[
 // 	fmt.Println("image saved to:", plotPath)
 // }
 
-func (t *TraceManager) RandomDownSampling(minSize float64) []ProcessedEntry {
-	currentSample, _ := t.SampleData(t.data, int(minSize*float64(len(t.data))))
+func (t *TraceManager) RandomDownSampling(minSize float64) []GlobalIDEntry {
+	currentSample, _ := t.SampleData(t.data, int(minSize*float64(len(t.data))), t.randomSeed)
 	return currentSample
 }
 
-func (t *TraceManager) YieldTargetSample(minSize float64, trialsNum int) []ProcessedEntry {
-	var finalSample []ProcessedEntry
+func (t *TraceManager) YieldTargetSample(minSize float64, trialsNum int) []GlobalIDEntry {
+	var finalSample []GlobalIDEntry
 	if t.promptName == "None" {
 		finalSample = t.RandomDownSampling(minSize)
 	} else {
@@ -244,22 +321,22 @@ func (t *TraceManager) YieldTargetSample(minSize float64, trialsNum int) []Proce
 		finalSample = samples[minSize]
 	}
 	sort.Slice(finalSample, func(i, j int) bool {
-		return finalSample[i].TimeDelta < finalSample[j].TimeDelta
+		return finalSample[i].Request.TimeDelta < finalSample[j].Request.TimeDelta
 	})
 	return finalSample
 }
 
-func (t *TraceManager) UpscalerTrace(upscaleFactor float64) []ProcessedEntry {
+func (t *TraceManager) UpscalerTrace(upscaleFactor float64, seed int64) []GlobalIDEntry {
 	if upscaleFactor <= 1.00 {
 		fmt.Println("Invalid upscale factor!")
 		return nil
 	}
-	data_frame := make([]ProcessedEntry, len(t.data))
+	data_frame := make([]GlobalIDEntry, len(t.data))
 	copy(data_frame, t.data)
 	oldTimestamps := make([]int, len(data_frame))
 
 	for i, entry := range data_frame {
-		oldTimestamps[i] = entry.TimeDelta
+		oldTimestamps[i] = entry.Request.TimeDelta
 	}
 
 	totalEntries := len(oldTimestamps)
@@ -267,9 +344,10 @@ func (t *TraceManager) UpscalerTrace(upscaleFactor float64) []ProcessedEntry {
 	fraction := upscaleFactor - float64(floorValue)
 
 	var newTimestamps []int
+	r := rand.New(rand.NewSource(seed))
 	for _, idx := range oldTimestamps {
 		newCount := floorValue
-		if rand.Float64() < fraction {
+		if r.Float64() < fraction {
 			newCount++
 		}
 		for i := 0; i < newCount; i++ {
@@ -279,38 +357,49 @@ func (t *TraceManager) UpscalerTrace(upscaleFactor float64) []ProcessedEntry {
 			}
 		}
 	}
-	newData := make([]ProcessedEntry, totalEntries)
+	newData := make([]GlobalIDEntry, totalEntries)
 	for i, entry := range data_frame {
-		newData[i] = ProcessedEntry{
-			TimeDelta: int(newTimestamps[i]),
-			Data:      entry.Data,
+		newData[i] = GlobalIDEntry{
+			Request: ProcessedEntry{
+				TimeDelta:  int(newTimestamps[i]),
+				Data:       entry.Request.Data,
+				Attributes: entry.Request.Attributes,
+			},
 		}
 	}
 
 	return newData
 }
 
-func (t *TraceManager) UpscaleAvgRate(upscaleFactor float64) []ProcessedEntry {
+func (t *TraceManager) UpscaleAvgRate(upscaleFactor float64, seed int64) []GlobalIDEntry {
 	if upscaleFactor <= 1.00 {
 		log.Println("invalid upscale factor!")
 		return t.data
 	}
 	// window size 10000ms
-	data_frame := make([]ProcessedEntry, len(t.data))
+	data_frame := make([]GlobalIDEntry, len(t.data))
 	copy(data_frame, t.data)
 	const dataWindow = 10000
 	maxTimestamp := t.getMaxTimestamp()
 	lastWindowStart := (maxTimestamp / dataWindow) * dataWindow
 	lastWindowEnd := maxTimestamp + 1
 
-	windowGroups := make(map[int][]ProcessedEntry)
+	windowGroups := make(map[int][]GlobalIDEntry)
 	for _, entry := range data_frame {
-		windowStart := (entry.TimeDelta / dataWindow) * dataWindow
+		windowStart := (entry.Request.TimeDelta / dataWindow) * dataWindow
 		windowGroups[windowStart] = append(windowGroups[windowStart], entry)
 	}
-	var newRows []ProcessedEntry
 
-	for windowStart, group := range windowGroups {
+	var windowKeys []int
+	for k := range windowGroups {
+		windowKeys = append(windowKeys, k)
+	}
+	sort.Ints(windowKeys)
+
+	var newRows []GlobalIDEntry
+	r := rand.New(rand.NewSource(seed))
+	for _, windowStart := range windowKeys {
+		group := windowGroups[windowStart]
 		windowSize := dataWindow
 		if windowStart == lastWindowStart {
 			windowSize = lastWindowEnd - lastWindowStart
@@ -320,9 +409,10 @@ func (t *TraceManager) UpscaleAvgRate(upscaleFactor float64) []ProcessedEntry {
 		if numNewReq == 0 {
 			continue
 		}
+
 		arrivalIntervals := make([]float64, numNewReq)
 		for i := 0; i < numNewReq; i++ {
-			arrivalIntervals[i] = rand.ExpFloat64() * float64(dataWindow) / float64(numNewReq)
+			arrivalIntervals[i] = r.ExpFloat64() * float64(dataWindow) / float64(numNewReq)
 		}
 
 		sort.Float64s(arrivalIntervals)
@@ -340,15 +430,15 @@ func (t *TraceManager) UpscaleAvgRate(upscaleFactor float64) []ProcessedEntry {
 			continue
 		}
 
-		sampledRequests := sampleEntries(group, numNewReq)
+		sampledRequests := sampleEntries(r, group, numNewReq)
 		for i := 0; i < numNewReq; i++ {
-			sampledRequests[i].TimeDelta = timestamps[i]
+			sampledRequests[i].Request.TimeDelta = timestamps[i]
 			newRows = append(newRows, sampledRequests[i])
 		}
 	}
-	// sort newRows by timeDelta
+
 	sort.Slice(newRows, func(i, j int) bool {
-		return newRows[i].TimeDelta < newRows[j].TimeDelta
+		return newRows[i].Request.TimeDelta < newRows[j].Request.TimeDelta
 	})
 	fmt.Println("newRows len:", len(newRows))
 	return newRows
@@ -357,17 +447,17 @@ func (t *TraceManager) UpscaleAvgRate(upscaleFactor float64) []ProcessedEntry {
 func (t *TraceManager) getMaxTimestamp() int {
 	maxTimestamp := 0
 	for _, entry := range t.data {
-		if entry.TimeDelta > maxTimestamp {
-			maxTimestamp = entry.TimeDelta
+		if entry.Request.TimeDelta > maxTimestamp {
+			maxTimestamp = entry.Request.TimeDelta
 		}
 	}
 	return maxTimestamp
 }
 
-func sampleEntries(entries []ProcessedEntry, n int) []ProcessedEntry {
-	sampled := make([]ProcessedEntry, n)
+func sampleEntries(r *rand.Rand, entries []GlobalIDEntry, n int) []GlobalIDEntry {
+	sampled := make([]GlobalIDEntry, n)
 	for i := 0; i < n; i++ {
-		idx := rand.Intn(len(entries))
+		idx := r.Intn(len(entries))
 		sampled[i] = entries[idx]
 	}
 	return sampled

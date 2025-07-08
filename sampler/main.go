@@ -12,6 +12,7 @@ type InputParameters struct {
 	dataset_path   string
 	sampling_rate  string
 	recursive_step string
+	seed           int64
 	limit          string
 	prompt_name    string
 	maxDrift       int
@@ -20,16 +21,17 @@ type InputParameters struct {
 	url            string
 }
 
-func InitializeFrontEnd(inputParameters *InputParameters) (interface{},map[string]interface{}, error) {
+func InitializeFrontEnd(inputParameters *InputParameters) (interface{}, map[string]interface{}, error) {
 	datasetPath := inputParameters.dataset_path
 	samplingRate := inputParameters.sampling_rate
 	recursiveStep := inputParameters.recursive_step
+	seed := inputParameters.seed
 	datasetLimit := inputParameters.limit
 	upScale := inputParameters.upscale
 	promptName := inputParameters.prompt_name
 	FrontendInstance := NewFrontend(upScale)
 
-	tracedata, commonHeader, err := FrontendInstance.Preprocessor(datasetPath, datasetLimit, upScale, samplingRate, recursiveStep, promptName)
+	tracedata, commonHeader, err := FrontendInstance.Preprocessor(datasetPath, seed, datasetLimit, upScale, samplingRate, recursiveStep, promptName)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -51,6 +53,7 @@ func parser() (*InputParameters, error) {
 	var _recursive_step string
 	var _limit string
 	var _maxDrift int
+	var _seed int64
 	var _prompt_name string
 	var _upscale string
 	var _result_path string
@@ -59,6 +62,7 @@ func parser() (*InputParameters, error) {
 	flag.StringVar(&_dataset_path, "dataset_path", "datasets/test_azure.json", `Specify the path of the dataset`)
 	flag.StringVar(&_sampling_rate, "sampling_rate", "100", `Specify the sampling rate, support from 0 to 1000, "0-100" is downsampling and "100-1000" is upsampling`)
 	flag.StringVar(&_recursive_step, "recur_step", "10", `Specify the recursive step, support from 0 to 100`)
+	flag.Int64Var(&_seed, "seed", 42, "The seed for the random number generator")
 	flag.StringVar(&_upscale, "upscale", "ars", "Indicates the up scaling method, support 'ars' and 'trace'")
 	flag.StringVar(&_url, "url", "http://localhost:8000/v1/completions", "Specify the url for liquid controller")
 	flag.StringVar(&_limit, "limit", "max", "The maximum length limit of dataset")
@@ -83,6 +87,7 @@ func parser() (*InputParameters, error) {
 		sampling_rate:  _sampling_rate,
 		recursive_step: _recursive_step,
 		limit:          _limit,
+		seed:           _seed,
 		maxDrift:       _maxDrift,
 		prompt_name:    _prompt_name,
 		upscale:        _upscale,
@@ -106,17 +111,17 @@ func main() {
 	}
 	//send the request array and delay array to the generator
 	log.Printf("start generation")
-	tracedata = tracedata.([]ProcessedEntry)
-	jsonData, err := json.MarshalIndent(tracedata, ""," ")
+	tracedata = tracedata.([]GlobalIDEntry)
+	jsonData, err := json.MarshalIndent(tracedata, "", " ")
 	if err != nil {
-		log.Printf("Error marshling JSON: ", err)
+		log.Printf("Error marshling JSON: %v", err)
 		return
 	}
 
-	err = os.WriteFile(inputParameters.result_path, jsonData, 0644) 
+	err = os.WriteFile(inputParameters.result_path, jsonData, 0644)
 	if err != nil {
-		log.Printf("Error writing to file: ", err)
+		log.Printf("Error writing to file: %v", err)
 		return
 	}
-	log.Printf("JSON written to: ", inputParameters.result_path)
+	log.Printf("JSON written to: %v", inputParameters.result_path)
 }

@@ -22,8 +22,24 @@ An example configuration:
         "sampling_rate": 100,
         "input_length_scale": 1,
         "output_length_scale": 1,
+        "tp_level": 1,
         "target": 10
-        }
+        },
+        {
+        "trace_path": "./trace/sample_1_all_input1_output1_ALL.json",
+        "model": "Qwen/Qwen2.5-32B",
+        "sampling_rate": 8,
+        "input_length_scale": 1,
+        "output_length_scale": 1,
+        "tp_level": 4,
+        "target": 89
+    }
 ]
 }
+```
+
+
+For test
+```
+python test_autoscaler.py
 ```
