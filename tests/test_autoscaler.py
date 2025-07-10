@@ -1,8 +1,8 @@
 import os
 import unittest
 import numpy as np
-from common import TimeSeriesFunction
-from autoscaler import monitor_concurrency, concurrency_window, get_concurrencys
+from cluster_simulator.common import TimeSeriesFunction
+from cluster_simulator.autoscaler import monitor_concurrency, concurrency_window, get_concurrencys, normalize_ts
 
 
 class TestAutoscaler(unittest.TestCase):
@@ -77,5 +77,10 @@ class TestAutoscaler(unittest.TestCase):
                        "All concurrency values should be non-negative")
 
 
+
+
+
+
 if __name__ == '__main__':
     unittest.main()
+    

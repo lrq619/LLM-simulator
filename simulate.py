@@ -69,7 +69,7 @@ def simulate(model_name: str, cuda_device_name: str, prompt_length: int, respons
         Returns a list of float, where the first element denotes the prompt latency, rest element denotes the genertion latency for each token in token phase
     """
     latencys = []
-
+    request_cache_utilization_list = []
     try:
         # First get gpu information
         memory_cap, memory_bw, memory_bw_util = get_gpu_info(cuda_device_name=cuda_device_name) 
@@ -88,24 +88,28 @@ def simulate(model_name: str, cuda_device_name: str, prompt_length: int, respons
     # print(f"For gpu: {cuda_device_name}, practical_mem_bw: {practical_mem_bw:.1f} GB/s, for model: {model_name}, kvc_size: {kvc_size_KB} KB, ptps={ptps:.1f} tokens/s")
 
     # Prompt Phase Latency
+    kvc_size_GB = kvc_size_KB / (1024**2)
     prompt_token_num = prompt_length * bsz
-    # cache_usage = model_size_GB + prompt_token_num * kvc_size_GB
+    prompt_cache_usage = prompt_token_num * kvc_size_GB
+    prompt_cache_utilization = prompt_cache_usage / memory_cap
     prompt_phase_latency = (prompt_token_num - intercept) / ptps
     latencys.append(prompt_phase_latency)
-    # cache_usage.append(cache_usage)
+    request_cache_utilization_list.append(prompt_cache_utilization)
 
-    kvc_size_GB = kvc_size_KB / (1024**2)
     for i in range(response_length):
-        cache_usage = model_size_GB + bsz * (prompt_length + i) * kvc_size_GB
+        # request_cache_usage = bsz * (prompt_length + i) * kvc_size_GB
+        request_cache_usage = bsz * i * kvc_size_GB
+        request_cache_utilization = request_cache_usage / memory_cap
+        cache_usage = model_size_GB + request_cache_usage
         token_phase_latency = cache_usage / (practical_mem_bw * tp_level)
         latencys.append(token_phase_latency)
-        # cache_usage.append(cache_usage)
+        request_cache_utilization_list.append(request_cache_utilization)
     # alpha, beta, c in README
     alpha = kvc_size_GB / (2*practical_mem_bw)
     beta = (prompt_length + 0.5) * kvc_size_GB / practical_mem_bw
     c = model_size_GB / practical_mem_bw
 
-    return latencys, alpha, beta, c
+    return latencys, alpha, beta, c, request_cache_utilization_list
 
 
 
@@ -144,7 +148,7 @@ if __name__ == '__main__':
     #     print(f"CUDA device not available! Cannot get ptps!")
     #     exit(1)
 
-    latencys, alpha, beta, c = simulate(
+    latencys, alpha, beta, c, request_cache_utilization_list = simulate(
         model_name=model_name, 
         cuda_device_name=cuda_device_name, 
         prompt_length=prompt_length, 
@@ -156,6 +160,7 @@ if __name__ == '__main__':
     if detail: 
         print(f"model: {model_name} running on {cuda_device_name}, with prompt and response: {prompt_length}-{response_length}\n\tPrompt phase latency: {prompt_phase_latency:.2f}s\n\tToken phase latency: {token_phase_latency:.2f}s\n\tTotal latency: {total_latency:.2f}s\n\t alpha={alpha}, beta={beta}, c={c}, c/beta={c/beta:.1f}")
     print(f"latencys: {latencys}")
+    print(f"request_cache_utilization_list: {request_cache_utilization_list}")
 
     
     
