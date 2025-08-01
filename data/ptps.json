@@ -1,24 +1,45 @@
 {
     "google/gemma-2-2b": {
-        "NVIDIA A100-SXM4-40GB": 40468.296322056499
+        "NVIDIA A100-SXM4-40GB": {
+            "ptps": 40468.296322056499,
+            "intercept": -250.5874215203637
+        }
     },
     "meta-llama/Meta-Llama-3-8B": {
-        "NVIDIA A100-SXM4-40GB": 16857.620408398812
+        "NVIDIA A100-SXM4-40GB": {
+            "ptps": 16857.620408398812,
+            "intercept": -250.5874215203637
+        }
     },
     "microsoft/Phi-3.5-mini-instruct": {
-        "NVIDIA A100-SXM4-40GB": 27764.6226800049653
+        "NVIDIA A100-SXM4-40GB": {
+            "ptps": 27764.6226800049653,
+            "intercept": -250.5874215203637
+        }
     },
     "agentica-org/DeepScaleR-1.5B-Preview": {
-        "NVIDIA A100-SXM4-40GB": 78948.3355174414
+        "NVIDIA A100-SXM4-40GB": {
+            "ptps": 78948.3355174414,
+            "intercept": -250.5874215203637
+        }
     },
     "deepseek-ai/DeepSeek-R1-Distill-Llama-8B": {
-        "NVIDIA A100-SXM4-40GB": 16942.111018806535
+        "NVIDIA A100-SXM4-40GB": {
+            "ptps": 16942.111018806535,
+            "intercept": -250.5874215203637
+        }
     },
     "deepseek-ai/DeepSeek-R1-Distill-Qwen-7B": {
-        "NVIDIA A100-SXM4-40GB": 18372.7721976173382
+        "NVIDIA A100-SXM4-40GB": {
+            "ptps": 18372.7721976173382,
+            "intercept": -250.5874215203637
+        }
     },
     "Qwen/Qwen2.5-7B-Instruct-1M": {
-        "NVIDIA A100-SXM4-40GB": 18704.9036384016828
+        "NVIDIA A100-SXM4-40GB": {
+            "ptps": 18704.9036384016828,
+            "intercept": -250.5874215203637
+        }
     },
     "Qwen/Qwen2.5-32B": {
         "NVIDIA A100-SXM4-40GB": {
@@ -27,10 +48,16 @@
         }
     },
     "microsoft/Phi-4-mini-instruct": {
-        "NVIDIA A100-SXM4-40GB": 32120.70280549985
+        "NVIDIA A100-SXM4-40GB": {
+            "ptps": 32120.70280549985,
+            "intercept": -250.5874215203637
+        }
     },
     "meta-llama/Llama-3.1-70B-Instruct": {
-        "NVIDIA A100-SXM4-40GB": 5876.751342488688
+        "NVIDIA A100-SXM4-40GB": {
+            "ptps": 5876.751342488688,
+            "intercept": -250.5874215203637
+        }
     },
     "meta-llama/Llama-3.1-8B": {
         "NVIDIA A100-SXM4-40GB": {

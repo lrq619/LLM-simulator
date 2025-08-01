@@ -71,25 +71,6 @@ def test_get_ptps(setup_mock_files):
         
         assert ptps == 2500.0
 
-def test_simulate(setup_mock_files):
-    with patch("simulate.PROJECT_ROOT_PATH", setup_mock_files):
-        # Test simulate function
-        latencies, alpha, beta, c = simulate(
-            model_name="llama-8b",
-            cuda_device_name="NVIDIA A100-SXM4-40GB",
-            prompt_length=1024,
-            response_length=128,
-            bsz=1
-        )
-        
-        # Basic assertions
-        assert isinstance(latencies, list)
-        assert len(latencies) == 129  # prompt_phase + response_length
-        assert all(isinstance(x, float) for x in latencies)
-        assert alpha > 0
-        assert beta > 0
-        assert c > 0
-
 def test_file_not_found_gpu_info(setup_mock_files):
     # Delete the gpu.json file to test file not found case
     os.remove(os.path.join(setup_mock_files, "data", "gpu.json"))
@@ -116,3 +97,25 @@ def test_file_not_found_ptps(setup_mock_files):
         with pytest.raises(Exception) as exc_info:
             get_ptps("llama-8b", "NVIDIA A100-SXM4-40GB")
         assert "Could not find ptp" in str(exc_info.value)
+        
+def test_simulate(setup_mock_files):
+    with patch("simulate.PROJECT_ROOT_PATH", setup_mock_files):
+        # Test simulate function
+        latencies, alpha, beta, c, request_cache_utilization_list = simulate(
+            model_name="meta-llama/Llama-3.1-8B",
+            cuda_device_name="NVIDIA A100-SXM4-40GB",
+            prompt_length=1024,
+            response_length=128,
+            bsz=1,
+            tp_level=1
+        )
+        # print(f"latencies: {latencies}")
+        # print(f"request_utilization: {request_cache_utilization_list}")
+        assert isinstance(latencies, list)
+        assert len(latencies) == 129  # prompt_phase + response_length
+        assert all(isinstance(x, float) for x in latencies)
+        assert alpha > 0
+        assert beta > 0
+        assert c > 0
+        assert len(request_cache_utilization_list) == 129
+        
