@@ -2,6 +2,7 @@ import os
 import json
 import argparse
 import matplotlib.pyplot as plt
+import matplotlib.figure as fig
 import numpy as np
 from cluster_simulator import simulate, PROJECT_DIR
 from cluster_simulator.trace import process_trace
@@ -15,7 +16,7 @@ os.makedirs(f"{PROJECT_DIR}/results", exist_ok=True)
 def main():
     parser = argparse.ArgumentParser(description="cluster level simulator")
     parser.add_argument("--config", type=str, default="./cluster_simulator/config.json")
-    parser.add_argument("--autoscale", type=str, default="kpa")
+    parser.add_argument("--autoscale", type=str, default="default")
 
     args = parser.parse_args()
     config_file = args.config
@@ -46,10 +47,9 @@ def main():
         with open(f"{PROJECT_DIR}/data/model.json", 'r') as f:
             model_info = json.load(f)
         model_info = model_info[model_name]
+        kvc_size_GB = model_info["kvc_size_KB"] / (1024**2)
         model_size_GB = model_info["model_size_GB"]
-        model_utilization = model_size_GB / gpu_memory_cap
-        left_space_utilization = utilization_target - model_utilization
-        print(f"Left_space_utilization: {left_space_utilization}")
+        left_space = (gpu_memory_cap - model_size_GB) * utilization_target
         chunk_size = workload_config.get("tp_level", 1)
         print(f"Processing trace for workload {workload_id} with chunk size {chunk_size}")
         processed_trace_file_path = process_trace(
@@ -60,7 +60,7 @@ def main():
         )
         print(f"Process trace finished! Going to use {processed_trace_file_path} as the trace for model: {workload_config['model']}")
         # Input the processed trace file, output the timeseries concurrency vs. time
-        if autoscale == "default" or autoscale == "kpa":
+        if autoscale in ["default", "kpa"]:
             concurrency_series = convert_processed_trace_to_concurrency_series(processed_trace_file_path, workload_config['model'],config["gpu_name"])
             chunk_number_series = convert_concurrency_to_chunk_number_series(concurrency_series, autoscale, workload_config['target'])
             save_timeseries_to_json(concurrency_series, f"{PROJECT_DIR}/results/concurrency_{workload_id}.json")
@@ -68,9 +68,9 @@ def main():
             plt.ylabel(f"Concurrency")
             plt.xlabel(f"Timestamps")
             plt.savefig(f"{PROJECT_DIR}/results/concurrency_{workload_id}.png")
-        elif autoscale == "hpa" or autoscale == "apa":
-            concurrency_series = convert_processed_trace_to_utilization_series(processed_trace_file_path, workload_config['model'],config["gpu_name"])
-            chunk_number_series = convert_concurrency_to_chunk_number_series(concurrency_series, autoscale, left_space_utilization)
+        elif autoscale in ["hpa", "apa"]:
+            concurrency_series = convert_processed_trace_to_utilization_series(processed_trace_file_path, workload_config['model'], config["gpu_name"], kvc_size_GB)
+            chunk_number_series = convert_concurrency_to_chunk_number_series(concurrency_series, autoscale, left_space)
             # all utilization should be added 
             save_timeseries_to_json(concurrency_series, f"{PROJECT_DIR}/results/utilization_{workload_id}.json")
             plt.plot(concurrency_series.timestamps, concurrency_series.values)
@@ -91,14 +91,18 @@ def main():
         # An event list recording each free/alloc GPU
         operations = extract_alloc_free_events(chunk_number_series, workload_id, chunk_size, node_number, gpu_number)
         gpu_operations.extend(operations)
-
-    print("length of gpu_operations: ", gpu_operations[0].event)
+        
     idle_gpu_number_series, cont_gpu_number_series, alloc_events = cluster_manager.replay(gpu_operations, max_chunk_size=MAX_CHUNK_SIZE)
     process_alloc_events(alloc_events)
     print("Process_alloc_events finished!")
     # keep 1 timestamp per second
     normalized_idle_series = normalize_ts(idle_gpu_number_series)
     alloc_success_number = node_number * gpu_number - normalized_idle_series.values
+    with open(f"{PROJECT_DIR}/results/alloc_success_number.json", "w") as f:
+        json.dump({
+            "timestamps": normalized_idle_series.timestamps.tolist(), 
+            "values": alloc_success_number.tolist()
+        }, f)
     alloc_success_number_series = TimeSeriesFunction(normalized_idle_series.timestamps, alloc_success_number)
     save_timeseries_to_json(alloc_success_number_series, f"{PROJECT_DIR}/results/alloc_success_number.json")
     print(f"Avg running #GPU: {np.mean(alloc_success_number)}")
@@ -158,7 +162,7 @@ def get_failure_alloc_series(alloc_events: List[EventTimestamp]) -> TimeSeriesFu
     return failure_alloc_series
 
 
-def plot_idle_and_cont_gpu_numbers(idle_gpu_number_series: TimeSeriesFunction, cont_gpu_number_series: TimeSeriesFunction) -> plt.Figure:
+def plot_idle_and_cont_gpu_numbers(idle_gpu_number_series: TimeSeriesFunction, cont_gpu_number_series: TimeSeriesFunction) -> fig.Figure:
         fig, axs = plt.subplots(2,1,figsize=(8, 4), sharex=True)
 
         axs[0].plot(idle_gpu_number_series.timestamps, idle_gpu_number_series.values, color="red", label="Total Idle GPUs", zorder=3)
@@ -172,7 +176,7 @@ def plot_idle_and_cont_gpu_numbers(idle_gpu_number_series: TimeSeriesFunction, c
 
         return fig  # Return the figure instance
 
-def plot_idle_and_cont_gpu_numbers_cdf(sampled_idle_gpu_number, sampled_cont_gpu_number) -> plt.Figure:
+def plot_idle_and_cont_gpu_numbers_cdf(sampled_idle_gpu_number, sampled_cont_gpu_number) -> fig.Figure:
     print(f"Avg idle #GPU: {np.mean(np.mean(sampled_idle_gpu_number))}, Avg continous #GPU: {np.mean(sampled_cont_gpu_number)}")
     fig, ax = plt.subplots(figsize=(8,4))
     ax.plot(np.sort(sampled_idle_gpu_number), np.linspace(0, 1, len(sampled_idle_gpu_number), endpoint=False), label=f"Idle GPU number", color="red")
@@ -183,7 +187,7 @@ def plot_idle_and_cont_gpu_numbers_cdf(sampled_idle_gpu_number, sampled_cont_gpu
     ax.grid(True)
     return fig
 
-def plot_fragmentation_gpu_number(failure_alloc_series: TimeSeriesFunction) -> plt.Figure:
+def plot_fragmentation_gpu_number(failure_alloc_series: TimeSeriesFunction) -> fig.Figure:
     fig, ax = plt.subplots(figsize=(8,4))
     ax.plot(failure_alloc_series.timestamps, failure_alloc_series.values, color="red", label="Fragmentation GPU number", zorder=3)
     ax.set_xlabel(f"Timestamps")

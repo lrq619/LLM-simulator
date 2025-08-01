@@ -1,4 +1,4 @@
-from typing import List, Dict, Tuple
+from typing import Any, List, Dict, Tuple
 import os
 import json
 import argparse
@@ -63,7 +63,7 @@ def get_ptps(model_name: str, cuda_device_name: str) -> Tuple[float, float]:
         print(e)
         raise Exception(f"Could not find ptps for {model_name} and {cuda_device_name} in {json_file_name}, consider first running: \npython profile_prompt.py --model-name={model_name}\n and check {json_file_name}")
 
-def simulate(model_name: str, cuda_device_name: str, prompt_length: int, response_length: int, bsz: int=1, tp_level: int=1) -> List[float]:
+def simulate(model_name: str, cuda_device_name: str, prompt_length: int, response_length: int, bsz: int=1, tp_level: int=1) -> tuple[list[float], float, float, float, float, float]:
     """Simulates LLM generation latency for given model, prompt length and response length
     Return Value:
         Returns a list of float, where the first element denotes the prompt latency, rest element denotes the genertion latency for each token in token phase
@@ -108,8 +108,8 @@ def simulate(model_name: str, cuda_device_name: str, prompt_length: int, respons
     alpha = kvc_size_GB / (2*practical_mem_bw)
     beta = (prompt_length + 0.5) * kvc_size_GB / practical_mem_bw
     c = model_size_GB / practical_mem_bw
-
-    return latencys, alpha, beta, c, request_cache_utilization_list
+    
+    return latencys, alpha, beta, c, ptps, intercept
 
 
 
@@ -148,7 +148,7 @@ if __name__ == '__main__':
     #     print(f"CUDA device not available! Cannot get ptps!")
     #     exit(1)
 
-    latencys, alpha, beta, c, request_cache_utilization_list = simulate(
+    latencys, alpha, beta, c, request_cache_utilization_list, ptps, intercept= simulate(
         model_name=model_name, 
         cuda_device_name=cuda_device_name, 
         prompt_length=prompt_length, 

@@ -6,15 +6,16 @@ cd ..
 ```
 Then, run cluster simulator with 
 ```
-python -m cluster_simulator.main
+python -m cluster_simulator.main --autoscale default
 ```
-
+We can change the argument from default to kpa, hpa, and apa as the autoscale methods to observe the GPU costs.
 An example configuration:
 ```
 {
     "gpu_name": "NVIDIA A100-SXM4-40GB",
     "gpu_number": 4,
     "node_number": 4,
+    "utilization_target" : 10,
     "workloads":[
         {
         "trace_path": "./trace/azure_conv_liquid.json",
