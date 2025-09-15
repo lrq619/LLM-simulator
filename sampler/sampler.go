@@ -7,8 +7,8 @@ import (
 	"math/rand"
 	"runtime"
 	"sort"
-	"strings"
 	"sync"
+
 )
 
 type TraceManager struct {
@@ -20,7 +20,7 @@ type TraceManager struct {
 
 type task struct {
 	idx   int
-	value string
+	value interface{}
 }
 
 func NewTraceManager(data []GlobalIDEntry, seed int64, promptName string) (*TraceManager, error) {
@@ -124,7 +124,16 @@ func CountPromptTokens(entries []GlobalIDEntry, promptName string) (map[int]floa
 		go func() {
 			defer wg.Done()
 			for t := range taskCh {
-				count := float64(strings.Count(t.value, " ")) + 1
+				var count float64
+				switch v := t.value.(type) {
+				case string:
+					count = float64(len(v))
+				case []interface{}:
+					count = float64(len(v))
+				default:
+					// handle unexpected type
+				}
+				// count := float64(strings.Count(t.value, " ")) + 1
 				mu.Lock()
 				result[t.idx] = count
 				mu.Unlock()
@@ -141,14 +150,17 @@ func CountPromptTokens(entries []GlobalIDEntry, promptName string) (map[int]floa
 			wg.Wait()
 			return nil, <-errCh
 		}
-		value, ok := valueRaw.(string)
-		if !ok {
-			errCh <- fmt.Errorf("prompt value at index %d is not a string", i)
+		switch v := valueRaw.(type) {
+		case string:
+			taskCh <- task{idx: i, value: v} // v is string
+		case []interface{}:
+			taskCh <- task{idx: i, value: v} // v is []int
+		default:
+			errCh <- fmt.Errorf("prompt value at index %d is not string or []int (got %T)", i, valueRaw)
 			close(taskCh)
 			wg.Wait()
 			return nil, <-errCh
 		}
-		taskCh <- task{idx: i, value: value}
 	}
 
 	close(taskCh)
@@ -164,6 +176,7 @@ func CountPromptTokens(entries []GlobalIDEntry, promptName string) (map[int]floa
 }
 
 func (t *TraceManager) ComputeWasserstein(original, sample []int) ([]float64, error) {
+	// pass the key in and we should give the value by looking it up in the promptTokenMap
 	origPrompt := make([]float64, len(original))
 	for i, key := range original {
 		origPrompt[i] = t.promptTokenMap[key]
@@ -236,73 +249,30 @@ func roundToTwoDecimals(value float64) float64 {
 	return math.Round(value*100) / 100
 }
 
-// func (t *TraceManager) analyzeSamples(samples map[float64][]GlobalIDEntry) map[float64][]float64 {
-// 	original := t.data
-// 	originalKeys := make([]int, len(t.data))
-// 	for i, entry := range original {
-// 		originalKeys[i] = entry.GlobalID
-// 	}
+func (t *TraceManager) analyzeSamples(samples map[float64][]GlobalIDEntry) map[float64][]float64 {
+	original := t.data
+	originalKeys := make([]int, len(t.data))
+	for i, entry := range original {
+		originalKeys[i] = entry.GlobalID
+	}
 
-// 	stats := make(map[float64][]float64)
-// 	for fraction, sample := range samples {
-// 		sampleKeys := make([]int, len(sample))
-// 		for i, samp := range sample {
-// 			sampleKeys[i] = samp.GlobalID
-// 		}
-// 		wDist, err := t.ComputeWasserstein(originalKeys, sampleKeys)
-// 		if err != nil {
-// 			log.Fatalf("failed to compute wasserstein distance: %v", err)
-// 		}
+	stats := make(map[float64][]float64)
+	for fraction, sample := range samples {
+		sampleKeys := make([]int, len(sample))
+		for i, samp := range sample {
+			sampleKeys[i] = samp.GlobalID
+		}
+		wDist, err := t.ComputeWasserstein(originalKeys, sampleKeys)
+		if err != nil {
+			log.Fatalf("failed to compute wasserstein distance: %v", err)
+		}
 
-// 		stats[fraction] = wDist
+		stats[fraction] = wDist
 
-// 	}
-// 	return stats
-// }
+	}
+	return stats
+}
 
-// func (t *TraceManager) plotWasserstein(stats map[float64][]float64) {
-// 	var fractions []float64
-// 	for fraction := range stats {
-// 		fractions = append(fractions, fraction)
-// 	}
-// 	sort.Float64s(fractions)
-
-// 	contextTokens := make(plotter.XYs, len(fractions))
-
-// 	for i, fraction := range fractions {
-// 		contextTokens[i].X = fraction
-// 		contextTokens[i].Y = stats[fraction][0]
-// 	}
-
-// 	p := plot.New()
-// 	p.Title.Text = "Wasserstein Distance Across Sample Fractions for Tokens"
-// 	p.X.Label.Text = "Sample Fraction"
-// 	p.Y.Label.Text = "Wasserstein Distance"
-
-// 	lineContext, err := plotter.NewLine(contextTokens)
-// 	if err != nil {
-// 		log.Fatalf("failed to create ContextTokens line: %v", err)
-// 	}
-// 	lineContext.Color = color.RGBA{R: 255, G: 0, B: 0, A: 255}
-
-// 	scatterContext, err := plotter.NewScatter(contextTokens)
-// 	if err != nil {
-// 		log.Fatalf("failed to create ContextTokens scatter: %v", err)
-// 	}
-// 	scatterContext.GlyphStyle.Color = color.RGBA{R: 255, G: 0, B: 255, A: 255}
-// 	scatterContext.GlyphStyle.Radius = vg.Points(5)
-// 	scatterContext.GlyphStyle.Shape = draw.CircleGlyph{}
-
-// 	p.Add(lineContext, scatterContext)
-
-// 	p.Legend.Add("ContextTokens", lineContext)
-
-// 	plotPath := "./plots/wasserstein_tokens.png"
-// 	if err := p.Save(12*vg.Inch, 6*vg.Inch, plotPath); err != nil {
-// 		log.Fatalf("failed to save image: %v", err)
-// 	}
-// 	fmt.Println("image saved to:", plotPath)
-// }
 
 func (t *TraceManager) RandomDownSampling(minSize float64) []GlobalIDEntry {
 	currentSample, _ := t.SampleData(t.data, int(minSize*float64(len(t.data))), t.randomSeed)
@@ -316,8 +286,6 @@ func (t *TraceManager) YieldTargetSample(minSize float64, trialsNum int) []Globa
 	} else {
 		samples := t.RecursiveRollDownSampling(trialsNum, 1.0, minSize, 0.01)
 
-		// stats := t.analyzeSamples(samples)
-		// t.plotWasserstein(stats)
 		finalSample = samples[minSize]
 	}
 	sort.Slice(finalSample, func(i, j int) bool {
