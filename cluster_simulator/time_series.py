@@ -21,7 +21,10 @@ def convert_request_to_event_ts(request_json, model_name, gpu_name) -> Tuple[Eve
     request_data = request_json["Request"]["data"]
     prompt = request_data["prompt"]
     response_length = request_data["max_tokens"]
-    prompt_length = len(prompt.split(" "))
+    if type(prompt) == list:
+        prompt_length = len(prompt)
+    else:
+        prompt_length = len(prompt.split(" "))
     latencys, _,_,_ = simulate(
         model_name=model_name,
         cuda_device_name=gpu_name,
